@@ -1,6 +1,6 @@
 #include "voxblox_ros/simulation_server.h"
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <voxblox/core/esdf_map.h>
 #include <voxblox/core/tsdf_map.h>
@@ -12,6 +12,8 @@
 #include <voxblox/simulation/simulation_world.h>
 #include <voxblox/utils/evaluation_utils.h>
 
+#include "pcl/point_types.h"
+#include "pcl_conversions/pcl_conversions.h"
 #include "voxblox_ros/conversions.h"
 #include "voxblox_ros/mesh_vis.h"
 #include "voxblox_ros/ptcloud_vis.h"
@@ -19,57 +21,98 @@
 
 namespace voxblox {
 
-void SimulationServer::getServerConfigFromRosParam(
-    const ros::NodeHandle& nh_private) {
+void SimulationServer::getServerConfigFromRosParam(rclcpp::Node* node_ptr) {
   // Settings for simulation.
-  nh_private_.param("tsdf_voxel_size", voxel_size_, voxel_size_);
-  nh_private_.param("tsdf_voxels_per_side", voxels_per_side_, voxels_per_side_);
-  nh_private.param("incremental", incremental_, incremental_);
-  nh_private.param("generate_mesh", generate_mesh_, generate_mesh_);
+  // nh_private_.param("tsdf_voxel_size", voxel_size_, voxel_size_);
+  // nh_private_.param("tsdf_voxels_per_side", voxels_per_side_,
+  // voxels_per_side_); nh_private.param("incremental", incremental_,
+  // incremental_); nh_private.param("generate_mesh", generate_mesh_,
+  // generate_mesh_);
 
-  nh_private.param("visualize", visualize_, visualize_);
-  nh_private.param("visualization_slice_level", visualization_slice_level_,
-                   visualization_slice_level_);
+  // nh_private.param("visualize", visualize_, visualize_);
+  // nh_private.param("visualization_slice_level", visualization_slice_level_,
+  //                  visualization_slice_level_);
 
-  nh_private.param("generate_occupancy", generate_occupancy_,
-                   generate_occupancy_);
-  nh_private.param("add_robot_pose", add_robot_pose_, add_robot_pose_);
-  nh_private.param("truncation_distance", truncation_distance_,
-                   truncation_distance_);
+  // nh_private.param("generate_occupancy", generate_occupancy_,
+  //                  generate_occupancy_);
+  // nh_private.param("add_robot_pose", add_robot_pose_, add_robot_pose_);
+  // nh_private.param("truncation_distance", truncation_distance_,
+  //                  truncation_distance_);
 
-  nh_private.param("depth_camera_resolution_u", depth_camera_resolution_[0],
-                   depth_camera_resolution_[0]);
-  nh_private.param("depth_camera_resolution_v", depth_camera_resolution_[1],
-                   depth_camera_resolution_[1]);
+  // nh_private.param("depth_camera_resolution_u", depth_camera_resolution_[0],
+  //                  depth_camera_resolution_[0]);
+  // nh_private.param("depth_camera_resolution_v", depth_camera_resolution_[1],
+  //                  depth_camera_resolution_[1]);
 
-  nh_private.param("fov_h_rad", fov_h_rad_, fov_h_rad_);
+  // nh_private.param("fov_h_rad", fov_h_rad_, fov_h_rad_);
 
-  nh_private.param("max_dist", max_dist_, max_dist_);
-  nh_private.param("min_dist", min_dist_, min_dist_);
+  // nh_private.param("max_dist", max_dist_, max_dist_);
+  // nh_private.param("min_dist", min_dist_, min_dist_);
 
-  nh_private.param("num_viewpoints", num_viewpoints_, num_viewpoints_);
+  // nh_private.param("num_viewpoints", num_viewpoints_, num_viewpoints_);
+  node_ptr->declare_parameter("tsdf_voxel_size", voxel_size_);
+  node_ptr->declare_parameter("tsdf_voxels_per_side", voxels_per_side_);
+  node_ptr->declare_parameter("incremental", incremental_);
+  node_ptr->declare_parameter("generate_mesh", generate_mesh_);
+  node_ptr->declare_parameter("visualize", visualize_);
+  node_ptr->declare_parameter("visualization_slice_level",
+                              visualization_slice_level_);
+  node_ptr->declare_parameter("generate_occupancy", generate_occupancy_);
+  node_ptr->declare_parameter("add_robot_pose", add_robot_pose_);
+  node_ptr->declare_parameter("truncation_distance", truncation_distance_);
+  node_ptr->declare_parameter("depth_camera_resolution_u",
+                              depth_camera_resolution_[0]);
+  node_ptr->declare_parameter("depth_camera_resolution_v",
+                              depth_camera_resolution_[1]);
+  node_ptr->declare_parameter("fov_h_rad", fov_h_rad_);
+  node_ptr->declare_parameter("max_dist", max_dist_);
+  node_ptr->declare_parameter("min_dist", min_dist_);
+  node_ptr->declare_parameter("num_viewpoints", num_viewpoints_);
+
+  node_ptr->get_parameter("tsdf_voxel_size", voxel_size_);
+  node_ptr->get_parameter("tsdf_voxels_per_side", voxels_per_side_);
+  node_ptr->get_parameter("incremental", incremental_);
+  node_ptr->get_parameter("generate_mesh", generate_mesh_);
+  node_ptr->get_parameter("visualize", visualize_);
+  node_ptr->get_parameter("visualization_slice_level",
+                          visualization_slice_level_);
+  node_ptr->get_parameter("generate_occupancy", generate_occupancy_);
+  node_ptr->get_parameter("add_robot_pose", add_robot_pose_);
+  node_ptr->get_parameter("truncation_distance", truncation_distance_);
+  node_ptr->get_parameter("depth_camera_resolution_u",
+                          depth_camera_resolution_[0]);
+  node_ptr->get_parameter("depth_camera_resolution_v",
+                          depth_camera_resolution_[1]);
+  node_ptr->get_parameter("fov_h_rad", fov_h_rad_);
+  node_ptr->get_parameter("max_dist", max_dist_);
+  node_ptr->get_parameter("min_dist", min_dist_);
+  node_ptr->get_parameter("num_viewpoints", num_viewpoints_);
 
   // NOTE(mfehr): needed because ros params does not support size_t.
   int max_attempts_to_generate_viewpoint =
       static_cast<int>(max_attempts_to_generate_viewpoint_);
-  nh_private.param("max_attempts_to_generate_viewpoint",
-                   max_attempts_to_generate_viewpoint,
-                   max_attempts_to_generate_viewpoint);
+  // nh_private.param("max_attempts_to_generate_viewpoint",
+  //                  max_attempts_to_generate_viewpoint,
+  //                  max_attempts_to_generate_viewpoint);
+  node_ptr->declare_parameter("max_attempts_to_generate_viewpoint",
+                              max_attempts_to_generate_viewpoint);
+  node_ptr->get_parameter("max_attempts_to_generate_viewpoint",
+                          max_attempts_to_generate_viewpoint);
   CHECK_GT(max_attempts_to_generate_viewpoint, 0);
   max_attempts_to_generate_viewpoint_ =
       static_cast<size_t>(max_attempts_to_generate_viewpoint);
 
-  nh_private.param("world_frame", world_frame_, world_frame_);
+  // nh_private.param("world_frame", world_frame_, world_frame_);
+  node_ptr->declare_parameter("world_frame", world_frame_);
+  node_ptr->get_parameter("world_frame", world_frame_);
 }
 
 SimulationServer::SimulationServer(
-    const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
-    const EsdfMap::Config& esdf_config,
+    rclcpp::Node* node_ptr, const EsdfMap::Config& esdf_config,
     const EsdfIntegrator::Config& esdf_integrator_config,
     const TsdfMap::Config& tsdf_config,
     const TsdfIntegratorBase::Config& tsdf_integrator_config)
-    : nh_(nh),
-      nh_private_(nh_private),
+    : node_ptr_(node_ptr),
       voxel_size_(tsdf_config.tsdf_voxel_size),
       voxels_per_side_(tsdf_config.tsdf_voxels_per_side),
       world_frame_("world"),
@@ -95,7 +138,7 @@ SimulationServer::SimulationServer(
   CHECK_EQ(static_cast<size_t>(voxels_per_side_),
            esdf_config.esdf_voxels_per_side);
 
-  getServerConfigFromRosParam(nh_private);
+  getServerConfigFromRosParam(node_ptr);
 
   tsdf_gt_.reset(new Layer<TsdfVoxel>(voxel_size_, voxels_per_side_));
   esdf_gt_.reset(new Layer<EsdfVoxel>(voxel_size_, voxels_per_side_));
@@ -130,34 +173,52 @@ SimulationServer::SimulationServer(
 
   // ROS stuff.
   // GT
-  tsdf_gt_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
-      "tsdf_gt", 1, true);
-  esdf_gt_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
-      "esdf_gt", 1, true);
-  tsdf_gt_mesh_pub_ = nh_private_.advertise<visualization_msgs::MarkerArray>(
-      "tsdf_gt_mesh", 1, true);
+  // tsdf_gt_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
+  //     "tsdf_gt", 1, true);
 
-  // Test
-  tsdf_test_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
-      "tsdf_test", 1, true);
-  esdf_test_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
-      "esdf_test", 1, true);
-  tsdf_test_mesh_pub_ = nh_private_.advertise<visualization_msgs::MarkerArray>(
-      "tsdf_test_mesh", 1, true);
+  // esdf_gt_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
+  //     "esdf_gt", 1, true);
+  // tsdf_gt_mesh_pub_ = nh_private_.advertise<visualization_msgs::MarkerArray>(
+  //     "tsdf_gt_mesh", 1, true);
 
-  view_ptcloud_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >(
-      "view_ptcloud_pub", 1, true);
+  // // Test
+  // tsdf_test_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
+  //     "tsdf_test", 1, true);
+  // esdf_test_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
+  //     "esdf_test", 1, true);
+  // tsdf_test_mesh_pub_ =
+  // nh_private_.advertise<visualization_msgs::MarkerArray>(
+  //     "tsdf_test_mesh", 1, true);
+
+  /* view_ptcloud_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZRGB>
+     >( "view_ptcloud_pub", 1, true); */
+  tsdf_gt_pub_ =
+      node_ptr_->create_publisher<sensor_msgs::msg::PointCloud2>("tsdf_gt", 1);
+  esdf_gt_pub_ =
+      node_ptr_->create_publisher<sensor_msgs::msg::PointCloud2>("esdf_gt", 1);
+  tsdf_gt_mesh_pub_ =
+      node_ptr_->create_publisher<visualization_msgs::msg::MarkerArray>(
+          "tsdf_gt_mesh", 1);
+  tsdf_test_pub_ = node_ptr_->create_publisher<sensor_msgs::msg::PointCloud2>(
+      "tsdf_test", 1);
+  esdf_test_pub_ = node_ptr_->create_publisher<sensor_msgs::msg::PointCloud2>(
+      "esdf_test", 1);
+  tsdf_test_mesh_pub_ =
+      node_ptr_->create_publisher<visualization_msgs::msg::MarkerArray>(
+          "tsdf_test_mesh", 1);
+  view_ptcloud_pub_ =
+      node_ptr_->create_publisher<sensor_msgs::msg::PointCloud2>(
+          "view_ptcloud_pub", 1);
 
   // Set random seed to a fixed value.
   srand(0);
 }
 
-SimulationServer::SimulationServer(const ros::NodeHandle& nh,
-                                   const ros::NodeHandle& nh_private)
-    : SimulationServer(nh, nh_private, getEsdfMapConfigFromRosParam(nh_private),
-                       getEsdfIntegratorConfigFromRosParam(nh_private),
-                       getTsdfMapConfigFromRosParam(nh_private),
-                       getTsdfIntegratorConfigFromRosParam(nh_private)) {}
+SimulationServer::SimulationServer(rclcpp::Node* node_ptr)
+    : SimulationServer(node_ptr, getEsdfMapConfigFromRosParam(node_ptr),
+                       getEsdfIntegratorConfigFromRosParam(node_ptr),
+                       getTsdfMapConfigFromRosParam(node_ptr),
+                       getTsdfIntegratorConfigFromRosParam(node_ptr)) {}
 
 bool SimulationServer::generatePlausibleViewpoint(FloatingPoint min_distance,
                                                   Point* ray_origin,
@@ -209,9 +270,14 @@ void SimulationServer::generateSDF() {
 
   for (int i = 0; i < num_viewpoints_; ++i) {
     if (!generatePlausibleViewpoint(min_dist_, &view_origin, &view_direction)) {
-      ROS_WARN(
-          "Could not generate enough viewpoints. Generated: %d, Needed: %d", i,
-          num_viewpoints_);
+      // ROS_WARN(
+      //     "Could not generate enough viewpoints. Generated: %d, Needed: %d",
+      //     i, num_viewpoints_);
+      RCLCPP_WARN(
+          node_ptr_->get_logger(),
+          "Could not generate enough viewpoints. Generated: %d, Needed: "
+          "%d",
+          i, num_viewpoints_);
       break;
     }
 
@@ -255,10 +321,13 @@ void SimulationServer::generateSDF() {
       point.x = view_origin.x();
       point.y = view_origin.y();
       point.z = view_origin.z();
+
       ptcloud_pcl.push_back(point);
 
-      view_ptcloud_pub_.publish(ptcloud_pcl);
-      ros::spinOnce();
+      sensor_msgs::msg::PointCloud2 ptcloud_msg;
+      pcl::toROSMsg(ptcloud_pcl, ptcloud_msg);
+      view_ptcloud_pub_->publish(ptcloud_msg);
+      // ros::spinOnce();
     }
   }
 
@@ -283,9 +352,14 @@ void SimulationServer::evaluate() {
   const double tsdf_rmse = utils::evaluateLayersRmse(*tsdf_gt_, *tsdf_test_);
   const double esdf_rmse = utils::evaluateLayersRmse(*esdf_gt_, *esdf_test_);
 
-  ROS_INFO_STREAM("TSDF RMSE: " << tsdf_rmse << " ESDF RMSE: " << esdf_rmse);
+  // ROS_INFO_STREAM("TSDF RMSE: " << tsdf_rmse << " ESDF RMSE: " << esdf_rmse);
 
-  ROS_INFO_STREAM("Mesh Timings: " << std::endl << timing::Timing::Print());
+  // ROS_INFO_STREAM("Mesh Timings: " << std::endl << timing::Timing::Print());
+  RCLCPP_INFO_STREAM(node_ptr_->get_logger(),
+                     "TSDF RMSE: " << tsdf_rmse << " ESDF RMSE: " << esdf_rmse);
+  RCLCPP_INFO_STREAM(node_ptr_->get_logger(),
+                     "Mesh Timings: " << std::endl
+                                      << timing::Timing::Print());
 }
 
 void SimulationServer::visualize() {
@@ -299,26 +373,37 @@ void SimulationServer::visualize() {
   createDistancePointcloudFromTsdfLayerSlice(
       *tsdf_gt_, 2, visualization_slice_level_, &pointcloud);
   // createDistancePointcloudFromTsdfLayer(*tsdf_gt_, &pointcloud);
-  tsdf_gt_pub_.publish(pointcloud);
+
+  sensor_msgs::msg::PointCloud2 pointcloud_msg;
+  pcl::toROSMsg(pointcloud, pointcloud_msg);
+  tsdf_gt_pub_->publish(pointcloud_msg);
 
   pointcloud.clear();
   createDistancePointcloudFromEsdfLayerSlice(
       *esdf_gt_, 2, visualization_slice_level_, &pointcloud);
   // createDistancePointcloudFromEsdfLayer(*esdf_gt_, &pointcloud);
-  esdf_gt_pub_.publish(pointcloud);
+  sensor_msgs::msg::PointCloud2 pointcloud_msg_esdf;
+  pcl::toROSMsg(pointcloud, pointcloud_msg_esdf);
+  esdf_gt_pub_->publish(pointcloud_msg_esdf);
 
   pointcloud.clear();
   createDistancePointcloudFromTsdfLayerSlice(
       *tsdf_test_, 2, visualization_slice_level_, &pointcloud);
 
+  sensor_msgs::msg::PointCloud2 pointcloud_msg_tsdf;
+  pcl::toROSMsg(pointcloud, pointcloud_msg_tsdf);
+  tsdf_test_pub_->publish(pointcloud_msg_tsdf);
   // createDistancePointcloudFromTsdfLayer(*tsdf_test_, &pointcloud);
-  tsdf_test_pub_.publish(pointcloud);
+  // tsdf_test_pub_.publish(pointcloud);
 
   pointcloud.clear();
   createDistancePointcloudFromEsdfLayerSlice(
       *esdf_test_, 2, visualization_slice_level_, &pointcloud);
   // createDistancePointcloudFromEsdfLayer(*esdf_test_, &pointcloud);
-  esdf_test_pub_.publish(pointcloud);
+  // esdf_test_pub_.publish(pointcloud);
+  sensor_msgs::msg::PointCloud2 pointcloud_msg_esdf_test;
+  pcl::toROSMsg(pointcloud, pointcloud_msg_esdf_test);
+  esdf_test_pub_->publish(pointcloud_msg_esdf_test);
 
   if (generate_mesh_) {
     // Generate TSDF GT mesh.
@@ -331,12 +416,12 @@ void SimulationServer::visualize() {
     constexpr bool clear_updated_flag = true;
     mesh_integrator.generateMesh(only_mesh_updated_blocks, clear_updated_flag);
 
-    visualization_msgs::MarkerArray marker_array;
+    visualization_msgs::msg::MarkerArray marker_array;
     marker_array.markers.resize(1);
     ColorMode color_mode = ColorMode::kNormals;
     fillMarkerWithMesh(mesh, color_mode, &marker_array.markers[0]);
     marker_array.markers[0].header.frame_id = world_frame_;
-    tsdf_gt_mesh_pub_.publish(marker_array);
+    tsdf_gt_mesh_pub_->publish(marker_array);
 
     // Also generate test mesh
     MeshLayer::Ptr mesh_test(new MeshLayer(tsdf_test_->block_size()));
@@ -348,9 +433,9 @@ void SimulationServer::visualize() {
     marker_array.markers.resize(1);
     fillMarkerWithMesh(mesh_test, color_mode, &marker_array.markers[0]);
     marker_array.markers[0].header.frame_id = world_frame_;
-    tsdf_test_mesh_pub_.publish(marker_array);
+    tsdf_test_mesh_pub_->publish(marker_array);
   }
-  ros::spinOnce();
+  // ros::spinOnce();
 }
 
 void SimulationServer::run() {

@@ -6,8 +6,10 @@
 
 #include <voxblox/core/esdf_map.h>
 #include <voxblox/integrator/esdf_integrator.h>
-#include <voxblox_msgs/Layer.h>
+#include <voxblox_msgs/msg/layer.hpp>
 
+#include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/empty.hpp>
 #include "voxblox_ros/tsdf_server.h"
 
 namespace voxblox {
@@ -16,17 +18,17 @@ class EsdfServer : public TsdfServer {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  EsdfServer(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
-  EsdfServer(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
-             const EsdfMap::Config& esdf_config,
+  EsdfServer(rclcpp::Node* node_ptr);
+  EsdfServer(rclcpp::Node* node_ptr, const EsdfMap::Config& esdf_config,
              const EsdfIntegrator::Config& esdf_integrator_config,
              const TsdfMap::Config& tsdf_config,
              const TsdfIntegratorBase::Config& tsdf_integrator_config,
              const MeshIntegratorConfig& mesh_config);
   virtual ~EsdfServer() {}
 
-  bool generateEsdfCallback(std_srvs::Empty::Request& request,     // NOLINT
-                            std_srvs::Empty::Response& response);  // NOLINT
+  void generateEsdfCallback(
+      const std_srvs::srv::Empty::Request::SharedPtr request,  // NOLINT
+      std_srvs::srv::Empty::Response::SharedPtr response);     // NOLINT
 
   void publishAllUpdatedEsdfVoxels();
   virtual void publishSlices();
@@ -38,7 +40,7 @@ class EsdfServer : public TsdfServer {
   virtual bool saveMap(const std::string& file_path);
   virtual bool loadMap(const std::string& file_path);
 
-  void updateEsdfEvent(const ros::TimerEvent& event);
+  void updateEsdfEvent();
 
   /// Call this to update the ESDF based on latest state of the TSDF map,
   /// considering only the newly updated parts of the TSDF map (checked with
@@ -48,7 +50,7 @@ class EsdfServer : public TsdfServer {
   void updateEsdfBatch(bool full_euclidean = false);
 
   // Overwrites the layer with what's coming from the topic!
-  void esdfMapCallback(const voxblox_msgs::Layer& layer_msg);
+  void esdfMapCallback(const voxblox_msgs::msg::Layer& layer_msg);
 
   inline std::shared_ptr<EsdfMap> getEsdfMapPtr() { return esdf_map_; }
   inline std::shared_ptr<const EsdfMap> getEsdfMapPtr() const {
@@ -79,21 +81,29 @@ class EsdfServer : public TsdfServer {
   void setupRos();
 
   /// Publish markers for visualization.
-  ros::Publisher esdf_pointcloud_pub_;
-  ros::Publisher esdf_slice_pub_;
-  ros::Publisher traversable_pub_;
+  // ros::Publisher esdf_pointcloud_pub_;
+  // ros::Publisher esdf_slice_pub_;
+  // ros::Publisher traversable_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+      esdf_pointcloud_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr esdf_slice_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr traversable_pub_;
 
   /// Publish the complete map for other nodes to consume.
-  ros::Publisher esdf_map_pub_;
+  // ros::Publisher esdf_map_pub_;
+  rclcpp::Publisher<voxblox_msgs::msg::Layer>::SharedPtr esdf_map_pub_;
 
   /// Subscriber to subscribe to another node generating the map.
-  ros::Subscriber esdf_map_sub_;
+  // ros::Subscriber esdf_map_sub_;
+  rclcpp::Subscription<voxblox_msgs::msg::Layer>::SharedPtr esdf_map_sub_;
 
   /// Services.
-  ros::ServiceServer generate_esdf_srv_;
+  // ros::ServiceServer generate_esdf_srv_;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr generate_esdf_srv_;
 
   /// Timers.
-  ros::Timer update_esdf_timer_;
+  // ros::Timer update_esdf_timer_;
+  rclcpp::TimerBase::SharedPtr update_esdf_timer_;
 
   bool clear_sphere_for_planning_;
   bool publish_esdf_map_;

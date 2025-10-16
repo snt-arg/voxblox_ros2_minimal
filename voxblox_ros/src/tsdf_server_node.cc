@@ -1,17 +1,17 @@
+#include <rclcpp/rclcpp.hpp>
 #include "voxblox_ros/tsdf_server.h"
 
 #include <gflags/gflags.h>
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "voxblox");
+  rclcpp::init(argc, argv);
   google::InitGoogleLogging(argv[0]);
   google::ParseCommandLineFlags(&argc, &argv, false);
   google::InstallFailureSignalHandler();
-  ros::NodeHandle nh;
-  ros::NodeHandle nh_private("~");
 
-  voxblox::TsdfServer node(nh, nh_private);
+  rclcpp::Node::SharedPtr node_ptr = rclcpp::Node::make_shared("voxblox_node");
+  voxblox::TsdfServer node(node_ptr.get());
 
-  ros::spin();
+  rclcpp::spin(node_ptr);
   return 0;
 }

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package>
+  <name>minkindr</name>
+  <version>1.0.0</version>
+  <description>minkindr for ament</description>
+
+  <maintainer email="miguel.fernandez@uni.lu">Miguel Fernandez</maintainer>
+  <author email="paul.furgale@gmail.com">Paul Furgale</author>
+  <license>BSD</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+</package>
+

@@ -1,12 +1,49 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(voxblox_msgs)
 
-find_package(catkin_simple REQUIRED)
-catkin_simple(ALL_DEPS_REQUIRED)
+# find_package(ament_cmake_auto REQUIRED)
 
-##########
-# EXPORT #
-##########
+# ament_auto_find_build_dependencies()
 
-cs_install()
-cs_export()
+# ament_auto_generate_code()
+
+# ##########
+# # EXPORT #
+# ##########
+
+# ament_auto_package()
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+set(PROJECT_DEPENDENCIES
+  std_msgs
+  geometry_msgs
+  builtin_interfaces
+)
+
+foreach(DEPENDENCY ${PROJECT_DEPENDENCIES})
+  find_package(${DEPENDENCY} REQUIRED)
+endforeach()
+
+
+file(GLOB_RECURSE MSGS_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "msg/*.msg")
+
+file(GLOB_RECURSE SRVS_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "srv/*.srv")
+
+file(GLOB_RECURSE ACTION_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "action/*.action")
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${MSGS_FILES}
+  ${SRVS_FILES}
+  ${ACTION_FILES}
+  DEPENDENCIES ${PROJECT_DEPENDENCIES}
+)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  ament_lint_cmake()
+  find_package(ament_cmake_xmllint REQUIRED)
+  ament_xmllint()
+endif()
+
+ament_package()
