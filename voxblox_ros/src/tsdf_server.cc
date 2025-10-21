@@ -40,6 +40,8 @@ TsdfServer::TsdfServer(rclcpp::Node* node_ptr, const TsdfMap::Config& config,
       num_subscribers_tsdf_map_(0),
       transformer_(node_ptr),
       min_time_between_msgs_(rclcpp::Duration::from_seconds(1)) {
+  last_msg_time_freespace_ptcloud_ =
+      rclcpp::Time(0, 0, node_ptr_->get_clock()->get_clock_type());
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_ptr_);
 
   getServerConfigFromRosParam(node_ptr);
@@ -478,7 +480,8 @@ void TsdfServer::processPointCloudMessageAndInsert(
     // tf_broadcaster_->sendTransform(
     //     tf::StampedTransform(icp_tf_msg, pointcloud_msg->header.stamp,
     //                          world_frame_, icp_corrected_frame_));
-    auto stamp = rclcpp::Time(pointcloud_msg->header.stamp);
+    auto stamp = rclcpp::Time(pointcloud_msg->header.stamp,
+                              node_ptr_->get_clock()->get_clock_type());
     auto msg_transform_stamped = geometry_msgs::msg::TransformStamped();
     msg_transform_stamped.header.stamp = stamp;
     msg_transform_stamped.header.frame_id = world_frame_;
@@ -574,12 +577,66 @@ bool TsdfServer::getNextPointcloudFromQueue(
   return false;
 }
 
+// void TsdfServer::insertPointcloud(
+//     const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg_in) {
+//   const auto clk_type = node_ptr_->get_clock()->get_clock_type();
+//   if (rclcpp::Time(pointcloud_msg_in->header.stamp, clk_type) -
+//           last_msg_time_ptcloud_ >
+//       min_time_between_msgs_) {
+//     last_msg_time_ptcloud_ = pointcloud_msg_in->header.stamp;
+//     // So we have to process the queue anyway... Push this back.
+//     pointcloud_queue_.push(pointcloud_msg_in);
+//   }
+
+//   Transformation T_G_C;
+//   sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg;
+//   bool processed_any = false;
+//   while (
+//       getNextPointcloudFromQueue(&pointcloud_queue_, &pointcloud_msg,
+//       &T_G_C)) {
+//     constexpr bool is_freespace_pointcloud = false;
+//     processPointCloudMessageAndInsert(pointcloud_msg, T_G_C,
+//                                       is_freespace_pointcloud);
+//     processed_any = true;
+//   }
+
+//   if (!processed_any) {
+//     return;
+//   }
+
+//   if (publish_pointclouds_on_update_) {
+//     publishPointclouds();
+//   }
+
+//   if (verbose_) {
+//     // ROS_INFO_STREAM("Timings: " << std::endl << timing::Timing::Print());
+//     // ROS_INFO_STREAM(
+//     //     "Layer memory: " << tsdf_map_->getTsdfLayer().getMemorySize());
+//     RCLCPP_INFO_STREAM(node_ptr_->get_logger(),
+//                        "Timings: " << std::endl
+//                                    << timing::Timing::Print());
+//     RCLCPP_INFO_STREAM(
+//         node_ptr_->get_logger(),
+//         "Layer memory: " << tsdf_map_->getTsdfLayer().getMemorySize());
+//   }
+// }
+
 void TsdfServer::insertPointcloud(
     const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg_in) {
-  if (rclcpp::Time(pointcloud_msg_in->header.stamp) - last_msg_time_ptcloud_ >
-      min_time_between_msgs_) {
-    last_msg_time_ptcloud_ = pointcloud_msg_in->header.stamp;
-    // So we have to process the queue anyway... Push this back.
+  const auto clk_type = node_ptr_->get_clock()->get_clock_type();
+  const rclcpp::Time t_msg(pointcloud_msg_in->header.stamp, clk_type);
+
+  // First message or clock-type mismatch: seed and enqueue
+  if (last_msg_time_ptcloud_.nanoseconds() == 0 ||
+      last_msg_time_ptcloud_.get_clock_type() != clk_type) {
+    RCLCPP_WARN(
+        node_ptr_->get_logger(),
+        "TSDF Server pointcloud clock type changed or first message. Resetting "
+        "last message time.");
+    last_msg_time_ptcloud_ = t_msg;  // <-- use t_msg (same clock)
+    pointcloud_queue_.push(pointcloud_msg_in);
+  } else if ((t_msg - last_msg_time_ptcloud_) > min_time_between_msgs_) {
+    last_msg_time_ptcloud_ = t_msg;  // <-- use t_msg (same clock)
     pointcloud_queue_.push(pointcloud_msg_in);
   }
 
@@ -594,21 +651,13 @@ void TsdfServer::insertPointcloud(
     processed_any = true;
   }
 
-  if (!processed_any) {
-    return;
-  }
+  if (!processed_any) return;
 
-  if (publish_pointclouds_on_update_) {
-    publishPointclouds();
-  }
+  if (publish_pointclouds_on_update_) publishPointclouds();
 
   if (verbose_) {
-    // ROS_INFO_STREAM("Timings: " << std::endl << timing::Timing::Print());
-    // ROS_INFO_STREAM(
-    //     "Layer memory: " << tsdf_map_->getTsdfLayer().getMemorySize());
-    RCLCPP_INFO_STREAM(node_ptr_->get_logger(),
-                       "Timings: " << std::endl
-                                   << timing::Timing::Print());
+    RCLCPP_INFO_STREAM(node_ptr_->get_logger(), "Timings:\n"
+                                                    << timing::Timing::Print());
     RCLCPP_INFO_STREAM(
         node_ptr_->get_logger(),
         "Layer memory: " << tsdf_map_->getTsdfLayer().getMemorySize());
@@ -617,7 +666,8 @@ void TsdfServer::insertPointcloud(
 
 void TsdfServer::insertFreespacePointcloud(
     const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg_in) {
-  if (rclcpp::Time(pointcloud_msg_in->header.stamp) -
+  const auto clk_type = node_ptr_->get_clock()->get_clock_type();
+  if (rclcpp::Time(pointcloud_msg_in->header.stamp, clk_type) -
           last_msg_time_freespace_ptcloud_ >
       min_time_between_msgs_) {
     last_msg_time_freespace_ptcloud_ = pointcloud_msg_in->header.stamp;

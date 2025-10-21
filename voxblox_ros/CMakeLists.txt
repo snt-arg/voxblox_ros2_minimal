@@ -6,6 +6,7 @@ ament_auto_find_build_dependencies(REQUIRED)
 
 add_definitions(-std=c++17 -Wall -Wextra)
 
+find_package(backward_ros REQUIRED)
 find_package(PCL REQUIRED)
 include_directories(
   include
