@@ -81,10 +81,10 @@ def generate_launch_description():
         parameters=[
             {
                 # Visualization / frames
-                "verbose": False,
+                "verbose": True,
                 "color_mode": "color",
-                "frame_id": "map",
-                "world_frame": "map",
+                "frame_id": "world",
+                "world_frame": "world",
                 # Files
                 "input_filepath": voxblox_path,
                 "output_filepath": output_path,

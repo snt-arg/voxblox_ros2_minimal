@@ -638,6 +638,14 @@ void TsdfServer::insertPointcloud(
   } else if ((t_msg - last_msg_time_ptcloud_) > min_time_between_msgs_) {
     last_msg_time_ptcloud_ = t_msg;  // <-- use t_msg (same clock)
     pointcloud_queue_.push(pointcloud_msg_in);
+    RCLCPP_ERROR(node_ptr_->get_logger(),
+                 "TSDF Server accepted pointcloud message at time %.3f sec.",
+                 t_msg.seconds());
+  } else {
+    // RCLCPP_WARN(
+    //     node_ptr_->get_logger(),
+    //     "TSDF Server dropping pointcloud message to maintain min time between
+    //     " "messages.");
   }
 
   Transformation T_G_C;
