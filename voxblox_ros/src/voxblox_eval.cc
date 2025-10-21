@@ -96,9 +96,15 @@ VoxbloxEvaluator::VoxbloxEvaluator(rclcpp::Node* node_ptr)
   // nh_private_.param("visualize", visualize_, visualize_);
   // nh_private_.param("recolor_by_error", recolor_by_error_,
   // recolor_by_error_); nh_private_.param("frame_id", frame_id_, frame_id_);
-  node_ptr_->declare_parameter("visualize", visualize_);
-  node_ptr_->declare_parameter("recolor_by_error", recolor_by_error_);
-  node_ptr_->declare_parameter("frame_id", frame_id_);
+  if (!node_ptr_->has_parameter("visualize")) {
+    node_ptr_->declare_parameter("visualize", visualize_);
+  }
+  if (!node_ptr_->has_parameter("recolor_by_error")) {
+    node_ptr_->declare_parameter("recolor_by_error", recolor_by_error_);
+  }
+  if (!node_ptr_->has_parameter("frame_id")) {
+    node_ptr_->declare_parameter("frame_id", frame_id_);
+  }
   node_ptr_->get_parameter("visualize", visualize_);
   node_ptr_->get_parameter("recolor_by_error", recolor_by_error_);
   node_ptr_->get_parameter("frame_id", frame_id_);
@@ -111,7 +117,10 @@ VoxbloxEvaluator::VoxbloxEvaluator(rclcpp::Node* node_ptr)
     bool invert_static_tranform = false;
     // nh_private_.param("invert_T_V_G", invert_static_tranform,
     //                   invert_static_tranform);
-    node_ptr_->declare_parameter("invert_T_V_G", invert_static_tranform);
+    if (!node_ptr_->has_parameter("invert_T_V_G")) {
+      node_ptr_->declare_parameter("invert_T_V_G", invert_static_tranform);
+    }
+    // node_ptr_->declare_parameter("invert_T_V_G", invert_static_tranform);
     node_ptr_->get_parameter("invert_T_V_G", invert_static_tranform);
     if (invert_static_tranform) {
       T_V_G_ = T_V_G_.inverse();
@@ -156,7 +165,10 @@ VoxbloxEvaluator::VoxbloxEvaluator(rclcpp::Node* node_ptr)
 
     std::string color_mode("color");
     // nh_private_.param("color_mode", color_mode, color_mode);
-    node_ptr_->declare_parameter("color_mode", color_mode);
+    if (!node_ptr_->has_parameter("color_mode")) {
+      node_ptr_->declare_parameter("color_mode", color_mode);
+    }
+
     node_ptr_->get_parameter("color_mode", color_mode);
 
     if (color_mode == "color") {

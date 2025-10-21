@@ -5,6 +5,7 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies(REQUIRED)
 
 add_definitions(-std=c++17 -Wall -Wextra)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 find_package(backward_ros REQUIRED)
 find_package(PCL REQUIRED)

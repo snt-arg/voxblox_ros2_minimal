@@ -339,9 +339,9 @@ void TsdfServer::getServerConfigFromRosParam(rclcpp::Node* node_ptr) {
   if (!node_ptr->has_parameter("mesh_filename")) {
     node_ptr->declare_parameter("mesh_filename", mesh_filename_);
   }
-  int color_mode_int = static_cast<int>(color_mode_);
+  std::string color_mode = "color";
   if (!node_ptr->has_parameter("color_mode")) {
-    node_ptr->declare_parameter("color_mode", color_mode_int);
+    node_ptr->declare_parameter("color_mode", color_mode);
   }
   if (!node_ptr->has_parameter("intensity_colormap")) {
     node_ptr->declare_parameter("intensity_colormap", std::string("rainbow"));
@@ -371,8 +371,8 @@ void TsdfServer::getServerConfigFromRosParam(rclcpp::Node* node_ptr) {
   node_ptr->get_parameter("mesh_filename", mesh_filename_);
 
   // node_ptr->get_parameter("color_mode", color_mode_);
-  node_ptr->get_parameter("color_mode", color_mode_int);
-  color_mode_ = static_cast<ColorMode>(color_mode_int);
+  node_ptr->get_parameter("color_mode", color_mode);
+  color_mode_ = getColorModeFromString(color_mode);
 
   std::string intensity_colormap("rainbow");
   float intensity_max_value = kDefaultMaxIntensity;

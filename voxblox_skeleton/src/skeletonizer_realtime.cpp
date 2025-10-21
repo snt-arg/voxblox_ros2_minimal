@@ -8,6 +8,7 @@
 #include <voxblox_ros/mesh_vis.h>
 #include <voxblox_ros/ptcloud_vis.h>
 #include <rclcpp/rclcpp.hpp>
+#include <string>
 
 #include "voxblox_skeleton/io/skeleton_io.h"
 #include "voxblox_skeleton/ros/skeleton_vis.h"
@@ -18,20 +19,24 @@ namespace voxblox {
 class SkeletonizerNode {
  public:
   SkeletonizerNode(rclcpp::Node::SharedPtr node_ptr)
-      : node_ptr_(node_ptr), frame_id_("map"), esdf_server_(node_ptr.get()) {
+      : node_ptr_(node_ptr), frame_id_("world"), esdf_server_(node_ptr.get()) {
     // skeleton_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZ> >(
     //     "skeleton", 1, true);
     // sparse_graph_pub_ =
     // nh_private_.advertise<visualization_msgs::MarkerArray>(
     //     "sparse_graph", 1, true);
     skeleton_pub_ = node_ptr_->create_publisher<sensor_msgs::msg::PointCloud2>(
-        "skeleton", rclcpp::QoS(1).transient_local());
+        std::string(node_ptr_->get_name()) + "/skeleton",
+        rclcpp::QoS(1).transient_local());
     sparse_graph_pub_ =
         node_ptr_->create_publisher<visualization_msgs::msg::MarkerArray>(
-            "sparse_graph", rclcpp::QoS(1).transient_local());
+            std::string(node_ptr_->get_name()) + "sparse_graph",
+            rclcpp::QoS(1).transient_local());
   }
 
   // Initialize the node.
+  // void read_params(rclcpp::Node::SharedPtr node_ptr);
+
   void init();
   // Update ESDF
   void updateEsdf();
@@ -124,6 +129,15 @@ void SkeletonizerNode::skeletonize(Layer<EsdfVoxel>* esdf_layer,
   node_ptr_->get_parameter("output_filepath", output_filepath_);
   node_ptr_->get_parameter("sparse_graph_filepath", sparse_graph_filepath_);
   node_ptr_->get_parameter("frame_id", frame_id_);
+
+  RCLCPP_WARN_STREAM(node_ptr_->get_logger(),
+                     "Input filepath: " << input_filepath_);
+  RCLCPP_WARN_STREAM(node_ptr_->get_logger(),
+                     "Output filepath: " << output_filepath_);
+  RCLCPP_WARN_STREAM(node_ptr_->get_logger(),
+                     "Sparse graph filepath: " << sparse_graph_filepath_);
+  RCLCPP_WARN_STREAM(node_ptr_->get_logger(), "Frame ID: " << frame_id_);
+
   update_esdf_ = false;
   // nh_private_.param("update_esdf", update_esdf_, update_esdf_);
   // nh_private_.param("vertex_distance_threshold", vertex_distance_threshold_,
@@ -158,7 +172,6 @@ void SkeletonizerNode::skeletonize(Layer<EsdfVoxel>* esdf_layer,
                                  generate_by_layer_neighbors_);
   }
   node_ptr_->get_parameter("generate_by_layer_neighbors",
-
                            generate_by_layer_neighbors_);
   skeleton_generator.setGenerateByLayerNeighbors(generate_by_layer_neighbors_);
 
@@ -208,14 +221,14 @@ void SkeletonizerNode::skeletonize(Layer<EsdfVoxel>* esdf_layer,
 
 int main(int argc, char** argv) {
   // Let gflags re-parse later if needed (optional)
-  gflags::AllowCommandLineReparsing();
+  // gflags::AllowCommandLineReparsing();
 
   // Init logging first (so FLAGS_* affect glog)
-  google::InitGoogleLogging(argv[0]);
+  google::InitGoogleLogging("-v=1");
 
   // Parse only non-help flags and REMOVE recognized ones from argv
   // so the remaining argv is clean for rclcpp.
-  gflags::ParseCommandLineNonHelpFlags(&argc, &argv, /*remove_flags=*/true);
+  // gflags::ParseCommandLineNonHelpFlags(&argc, &argv, /*remove_flags=*/true);
 
   // Now ROS 2 sees only its own args (e.g., --ros-args --params-file …)
   rclcpp::init(argc, argv);
