@@ -105,10 +105,21 @@ void SkeletonizerNode::skeletonize(Layer<EsdfVoxel>* esdf_layer,
   // nh_private_.param("sparse_graph_filepath", sparse_graph_filepath_,
   //                   sparse_graph_filepath_);
   // nh_private_.param("frame_id", frame_id_, frame_id_);
-  node_ptr_->declare_parameter("input_filepath", input_filepath_);
-  node_ptr_->declare_parameter("output_filepath", output_filepath_);
-  node_ptr_->declare_parameter("sparse_graph_filepath", sparse_graph_filepath_);
-  node_ptr_->declare_parameter("frame_id", frame_id_);
+  if (!node_ptr_->has_parameter("input_filepath")) {
+    node_ptr_->declare_parameter("input_filepath", input_filepath_);
+  }
+
+  if (!node_ptr_->has_parameter("output_filepath")) {
+    node_ptr_->declare_parameter("output_filepath", output_filepath_);
+  }
+  if (!node_ptr_->has_parameter("sparse_graph_filepath")) {
+    node_ptr_->declare_parameter("sparse_graph_filepath",
+                                 sparse_graph_filepath_);
+  }
+  if (!node_ptr_->has_parameter("frame_id")) {
+    node_ptr_->declare_parameter("frame_id", frame_id_);
+  }
+
   node_ptr_->get_parameter("input_filepath", input_filepath_);
   node_ptr_->get_parameter("output_filepath", output_filepath_);
   node_ptr_->get_parameter("sparse_graph_filepath", sparse_graph_filepath_);
@@ -118,16 +129,22 @@ void SkeletonizerNode::skeletonize(Layer<EsdfVoxel>* esdf_layer,
   // nh_private_.param("vertex_distance_threshold", vertex_distance_threshold_,
   //                   vertex_distance_threshold_);
 
-  node_ptr_->declare_parameter("update_esdf", update_esdf_);
-  node_ptr_->declare_parameter("vertex_distance_threshold",
-                               vertex_distance_threshold_);
+  if (!node_ptr_->has_parameter("update_esdf")) {
+    node_ptr_->declare_parameter("update_esdf", update_esdf_);
+  }
+  if (!node_ptr_->has_parameter("vertex_distance_threshold")) {
+    node_ptr_->declare_parameter("vertex_distance_threshold",
+                                 vertex_distance_threshold_);
+  }
   node_ptr_->get_parameter("update_esdf", update_esdf_);
   node_ptr_->get_parameter("vertex_distance_threshold",
                            vertex_distance_threshold_);
   min_separation_angle_ = skeleton_generator.getMinSeparationAngle();
   // nh_private_.param("min_separation_angle", min_separation_angle_,
   //                   min_separation_angle_);
-  node_ptr_->declare_parameter("min_separation_angle", min_separation_angle_);
+  if (!node_ptr_->has_parameter("min_separation_angle")) {
+    node_ptr_->declare_parameter("min_separation_angle", min_separation_angle_);
+  }
   node_ptr_->get_parameter("min_separation_angle", min_separation_angle_);
   skeleton_generator.setMinSeparationAngle(min_separation_angle_);
 
@@ -136,24 +153,31 @@ void SkeletonizerNode::skeletonize(Layer<EsdfVoxel>* esdf_layer,
   // nh_private_.param("generate_by_layer_neighbors",
   // generate_by_layer_neighbors_,
   //                   generate_by_layer_neighbors_);
-  node_ptr_->declare_parameter("generate_by_layer_neighbors",
-                               generate_by_layer_neighbors_);
+  if (!node_ptr_->has_parameter("generate_by_layer_neighbors")) {
+    node_ptr_->declare_parameter("generate_by_layer_neighbors",
+                                 generate_by_layer_neighbors_);
+  }
   node_ptr_->get_parameter("generate_by_layer_neighbors",
+
                            generate_by_layer_neighbors_);
   skeleton_generator.setGenerateByLayerNeighbors(generate_by_layer_neighbors_);
 
   num_neighbors_for_edge_ = skeleton_generator.getNumNeighborsForEdge();
   // nh_private_.param("num_neighbors_for_edge", num_neighbors_for_edge_,
   //                   num_neighbors_for_edge_);
-  node_ptr_->declare_parameter("num_neighbors_for_edge",
-                               num_neighbors_for_edge_);
+  if (!node_ptr_->has_parameter("num_neighbors_for_edge")) {
+    node_ptr_->declare_parameter("num_neighbors_for_edge",
+                                 num_neighbors_for_edge_);
+  }
   node_ptr_->get_parameter("num_neighbors_for_edge", num_neighbors_for_edge_);
   skeleton_generator.setNumNeighborsForEdge(num_neighbors_for_edge_);
 
   min_gvd_distance_ = skeleton_generator.getMinGvdDistance();
   // nh_private_.param("min_gvd_distance", min_gvd_distance_,
   // min_gvd_distance_);
-  node_ptr_->declare_parameter("min_gvd_distance", min_gvd_distance_);
+  if (!node_ptr_->has_parameter("min_gvd_distance")) {
+    node_ptr_->declare_parameter("min_gvd_distance", min_gvd_distance_);
+  }
   node_ptr_->get_parameter("min_gvd_distance", min_gvd_distance_);
   skeleton_generator.setMinGvdDistance(min_gvd_distance_);
 

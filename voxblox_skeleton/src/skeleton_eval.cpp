@@ -92,14 +92,37 @@ SkeletonEvalNode::SkeletonEvalNode(rclcpp::Node::SharedPtr node_ptr)
   // nh_private_.param("apply_noise", apply_noise_, apply_noise_);
   // nh_private_.param("noise_sigma", noise_sigma_, noise_sigma_);
   // nh_private_.param("frame_id", frame_id_, frame_id_);
-  node_ptr_->declare_parameter("visualize", visualize_);
-  node_ptr_->declare_parameter("full_euclidean_distance",
-                               full_euclidean_distance_);
-  node_ptr_->declare_parameter("esdf_max_distance", esdf_max_distance_);
-  node_ptr_->declare_parameter("tsdf_max_distance", tsdf_max_distance_);
-  node_ptr_->declare_parameter("apply_noise", apply_noise_);
-  node_ptr_->declare_parameter("noise_sigma", noise_sigma_);
-  node_ptr_->declare_parameter("frame_id", frame_id_);
+  // node_ptr_->declare_parameter("visualize", visualize_);
+  // node_ptr_->declare_parameter("full_euclidean_distance",
+  //                              full_euclidean_distance_);
+  // node_ptr_->declare_parameter("esdf_max_distance", esdf_max_distance_);
+  // node_ptr_->declare_parameter("tsdf_max_distance", tsdf_max_distance_);
+  // node_ptr_->declare_parameter("apply_noise", apply_noise_);
+  // node_ptr_->declare_parameter("noise_sigma", noise_sigma_);
+  // node_ptr_->declare_parameter("frame_id", frame_id_);
+  if (!node_ptr_->has_parameter("visualize")) {
+    node_ptr_->declare_parameter("visualize", visualize_);
+  }
+  if (!node_ptr_->has_parameter("full_euclidean_distance")) {
+    node_ptr_->declare_parameter("full_euclidean_distance",
+                                 full_euclidean_distance_);
+  }
+  if (!node_ptr_->has_parameter("esdf_max_distance")) {
+    node_ptr_->declare_parameter("esdf_max_distance", esdf_max_distance_);
+  }
+  if (!node_ptr_->has_parameter("tsdf_max_distance")) {
+    node_ptr_->declare_parameter("tsdf_max_distance", tsdf_max_distance_);
+  }
+  if (!node_ptr_->has_parameter("apply_noise")) {
+    node_ptr_->declare_parameter("apply_noise", apply_noise_);
+  }
+  if (!node_ptr_->has_parameter("noise_sigma")) {
+    node_ptr_->declare_parameter("noise_sigma", noise_sigma_);
+  }
+  if (!node_ptr_->has_parameter("frame_id")) {
+    node_ptr_->declare_parameter("frame_id", frame_id_);
+  }
+
   node_ptr_->get_parameter("visualize", visualize_);
   node_ptr_->get_parameter("full_euclidean_distance", full_euclidean_distance_);
   node_ptr_->get_parameter("esdf_max_distance", esdf_max_distance_);
@@ -275,7 +298,11 @@ void SkeletonEvalNode::generateSkeleton() {
       skeleton_generator.getMinSeparationAngle();
   // nh_private_.param("min_separation_angle", min_separation_angle,
   //                   min_separation_angle);
-  node_ptr_->declare_parameter("min_separation_angle", min_separation_angle);
+  // node_ptr_->declare_parameter("min_separation_angle", min_separation_angle);
+  if (!node_ptr_->has_parameter("min_separation_angle")) {
+    node_ptr_->declare_parameter("min_separation_angle", min_separation_angle);
+  }
+
   node_ptr_->get_parameter("min_separation_angle", min_separation_angle);
   skeleton_generator.setMinSeparationAngle(min_separation_angle);
   bool generate_by_layer_neighbors =
@@ -283,8 +310,12 @@ void SkeletonEvalNode::generateSkeleton() {
   // nh_private_.param("generate_by_layer_neighbors",
   // generate_by_layer_neighbors,
   //                   generate_by_layer_neighbors);
-  node_ptr_->declare_parameter("generate_by_layer_neighbors",
-                               generate_by_layer_neighbors);
+  /* node_ptr_->declare_parameter("generate_by_layer_neighbors",
+                               generate_by_layer_neighbors); */
+  if (!node_ptr_->has_parameter("generate_by_layer_neighbors")) {
+    node_ptr_->declare_parameter("generate_by_layer_neighbors",
+                                 generate_by_layer_neighbors);
+  }
   node_ptr_->get_parameter("generate_by_layer_neighbors",
                            generate_by_layer_neighbors);
   skeleton_generator.setGenerateByLayerNeighbors(generate_by_layer_neighbors);
@@ -292,14 +323,21 @@ void SkeletonEvalNode::generateSkeleton() {
   int num_neighbors_for_edge = skeleton_generator.getNumNeighborsForEdge();
   // nh_private_.param("num_neighbors_for_edge", num_neighbors_for_edge,
   //                   num_neighbors_for_edge);
-  node_ptr_->declare_parameter("num_neighbors_for_edge",
-                               num_neighbors_for_edge);
+  /* node_ptr_->declare_parameter("num_neighbors_for_edge",
+                               num_neighbors_for_edge); */
+  if (!node_ptr_->has_parameter("num_neighbors_for_edge")) {
+    node_ptr_->declare_parameter("num_neighbors_for_edge",
+                                 num_neighbors_for_edge);
+  }
   node_ptr_->get_parameter("num_neighbors_for_edge", num_neighbors_for_edge);
   skeleton_generator.setNumNeighborsForEdge(num_neighbors_for_edge);
 
   FloatingPoint min_gvd_distance = skeleton_generator.getMinGvdDistance();
   // nh_private_.param("min_gvd_distance", min_gvd_distance, min_gvd_distance);
-  node_ptr_->declare_parameter("min_gvd_distance", min_gvd_distance);
+  // node_ptr_->declare_parameter("min_gvd_distance", min_gvd_distance);
+  if (!node_ptr_->has_parameter("min_gvd_distance")) {
+    node_ptr_->declare_parameter("min_gvd_distance", min_gvd_distance);
+  }
   node_ptr_->get_parameter("min_gvd_distance", min_gvd_distance);
   skeleton_generator.setMinGvdDistance(min_gvd_distance);
 
@@ -364,13 +402,16 @@ void SkeletonEvalNode::generateSkeleton() {
 }  // namespace voxblox
 
 int main(int argc, char** argv) {
+  gflags::AllowCommandLineReparsing();
+
+  // Init logging first (so FLAGS_* affect glog)
+  google::InitGoogleLogging(argv[0]);
+
+  // Parse only non-help flags and REMOVE recognized ones from argv
+  // so the remaining argv is clean for rclcpp.
+  gflags::ParseCommandLineNonHelpFlags(&argc, &argv, /*remove_flags=*/true);
   // ros::init(argc, argv, "voxblox_skeletonizer");
   rclcpp::init(argc, argv);
-  google::InitGoogleLogging(argv[0]);
-  google::ParseCommandLineFlags(&argc, &argv, false);
-  google::InstallFailureSignalHandler();
-  // ros::NodeHandle nh;
-  // ros::NodeHandle nh_private("~");
   rclcpp::Node::SharedPtr nh =
       rclcpp::Node::make_shared("voxblox_skeletonizer");
 
@@ -384,7 +425,12 @@ int main(int argc, char** argv) {
 
   // nh_private.param("generate_from_robot_poses", generate_from_robot_poses,
   //                  generate_from_robot_poses);
-  nh->declare_parameter("generate_from_robot_poses", generate_from_robot_poses);
+  // nh->declare_parameter("generate_from_robot_poses",
+  // generate_from_robot_poses);
+  if (!nh->has_parameter("generate_from_robot_poses")) {
+    nh->declare_parameter("generate_from_robot_poses",
+                          generate_from_robot_poses);
+  }
   nh->get_parameter("generate_from_robot_poses", generate_from_robot_poses);
 
   if (generate_from_robot_poses) {

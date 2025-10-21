@@ -65,17 +65,35 @@ void SkeletonizerNode::init() {
   // nh_private_.param("sparse_graph_filepath", sparse_graph_filepath,
   //                   sparse_graph_filepath);
   // nh_private_.param("frame_id", frame_id_, frame_id_);
-  node_ptr_->declare_parameter("input_filepath", input_filepath);
-  node_ptr_->declare_parameter("output_filepath", output_filepath);
-  node_ptr_->declare_parameter("sparse_graph_filepath", sparse_graph_filepath);
-  node_ptr_->declare_parameter("frame_id", frame_id_);
+  // node_ptr_->declare_parameter("input_filepath", input_filepath);
+  // node_ptr_->declare_parameter("output_filepath", output_filepath);
+  // node_ptr_->declare_parameter("sparse_graph_filepath",
+  // sparse_graph_filepath); node_ptr_->declare_parameter("frame_id",
+  // frame_id_);
+  if (!node_ptr_->has_parameter("input_filepath")) {
+    node_ptr_->declare_parameter("input_filepath", input_filepath);
+  }
+  if (!node_ptr_->has_parameter("output_filepath")) {
+    node_ptr_->declare_parameter("output_filepath", output_filepath);
+  }
+  if (!node_ptr_->has_parameter("sparse_graph_filepath")) {
+    node_ptr_->declare_parameter("sparse_graph_filepath",
+                                 sparse_graph_filepath);
+  }
+  if (!node_ptr_->has_parameter("frame_id")) {
+    node_ptr_->declare_parameter("frame_id", frame_id_);
+  }
   node_ptr_->get_parameter("input_filepath", input_filepath);
   node_ptr_->get_parameter("output_filepath", output_filepath);
   node_ptr_->get_parameter("sparse_graph_filepath", sparse_graph_filepath);
   node_ptr_->get_parameter("frame_id", frame_id_);
   bool update_esdf = false;
   // nh_private_.param("update_esdf", update_esdf, update_esdf);
-  node_ptr_->declare_parameter("update_esdf", update_esdf);
+  // node_ptr_->declare_parameter("update_esdf", update_esdf);
+  if (!node_ptr_->has_parameter("update_esdf")) {
+    node_ptr_->declare_parameter("update_esdf", update_esdf);
+  }
+
   node_ptr_->get_parameter("update_esdf", update_esdf);
 
   if (input_filepath.empty()) {
@@ -156,15 +174,22 @@ void SkeletonizerNode::skeletonize(Layer<EsdfVoxel>* esdf_layer,
       skeleton_generator_.getMinSeparationAngle();
   /* nh_private_.param("min_separation_angle", min_separation_angle,
                     min_separation_angle); */
-  node_ptr_->declare_parameter("min_separation_angle", min_separation_angle);
+  // node_ptr_->declare_parameter("min_separation_angle", min_separation_angle);
+  if (!node_ptr_->has_parameter("min_separation_angle")) {
+    node_ptr_->declare_parameter("min_separation_angle", min_separation_angle);
+  }
   node_ptr_->get_parameter("min_separation_angle", min_separation_angle);
   skeleton_generator_.setMinSeparationAngle(min_separation_angle);
   bool generate_by_layer_neighbors =
       skeleton_generator_.getGenerateByLayerNeighbors();
   /* nh_private_.param("generate_by_layer_neighbors",
      generate_by_layer_neighbors, generate_by_layer_neighbors); */
-  node_ptr_->declare_parameter("generate_by_layer_neighbors",
-                               generate_by_layer_neighbors);
+  /* node_ptr_->declare_parameter("generate_by_layer_neighbors",
+                               generate_by_layer_neighbors); */
+  if (!node_ptr_->has_parameter("generate_by_layer_neighbors")) {
+    node_ptr_->declare_parameter("generate_by_layer_neighbors",
+                                 generate_by_layer_neighbors);
+  }
   node_ptr_->get_parameter("generate_by_layer_neighbors",
                            generate_by_layer_neighbors);
   skeleton_generator_.setGenerateByLayerNeighbors(generate_by_layer_neighbors);
@@ -172,14 +197,21 @@ void SkeletonizerNode::skeletonize(Layer<EsdfVoxel>* esdf_layer,
   int num_neighbors_for_edge = skeleton_generator_.getNumNeighborsForEdge();
   /* nh_private_.param("num_neighbors_for_edge", num_neighbors_for_edge,
                     num_neighbors_for_edge); */
-  node_ptr_->declare_parameter("num_neighbors_for_edge",
-                               num_neighbors_for_edge);
+  /* node_ptr_->declare_parameter("num_neighbors_for_edge",
+                               num_neighbors_for_edge); */
+  if (!node_ptr_->has_parameter("num_neighbors_for_edge")) {
+    node_ptr_->declare_parameter("num_neighbors_for_edge",
+                                 num_neighbors_for_edge);
+  }
   node_ptr_->get_parameter("num_neighbors_for_edge", num_neighbors_for_edge);
   skeleton_generator_.setNumNeighborsForEdge(num_neighbors_for_edge);
 
   FloatingPoint min_gvd_distance = skeleton_generator_.getMinGvdDistance();
   // nh_private_.param("min_gvd_distance", min_gvd_distance, min_gvd_distance);
-  node_ptr_->declare_parameter("min_gvd_distance", min_gvd_distance);
+  // node_ptr_->declare_parameter("min_gvd_distance", min_gvd_distance);
+  if (!node_ptr_->has_parameter("min_gvd_distance")) {
+    node_ptr_->declare_parameter("min_gvd_distance", min_gvd_distance);
+  }
   node_ptr_->get_parameter("min_gvd_distance", min_gvd_distance);
   skeleton_generator_.setMinGvdDistance(min_gvd_distance);
 
