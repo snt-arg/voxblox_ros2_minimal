@@ -22,8 +22,14 @@ inline TsdfMap::Config getTsdfMapConfigFromRosParam(rclcpp::Node* node_ptr) {
   double voxel_size = tsdf_config.tsdf_voxel_size;
   int voxels_per_side = tsdf_config.tsdf_voxels_per_side;
 
-  node_ptr->declare_parameter("tsdf_voxel_size", voxel_size);
-  node_ptr->declare_parameter("tsdf_voxels_per_side", voxels_per_side);
+  if (!node_ptr->has_parameter("tsdf_voxel_size")) {
+    node_ptr->declare_parameter("tsdf_voxel_size", voxel_size);
+  }
+
+  if (!node_ptr->has_parameter("tsdf_voxels_per_side")) {
+    node_ptr->declare_parameter("tsdf_voxels_per_side", voxels_per_side);
+  }
+
   node_ptr->get_parameter("tsdf_voxel_size", voxel_size);
   node_ptr->get_parameter("tsdf_voxels_per_side", voxels_per_side);
 
@@ -58,19 +64,31 @@ inline ICP::Config getICPConfigFromRosParam(rclcpp::Node* node_ptr) {
   // nh_private.param("icp_inital_rotation_weighting",
   //                  icp_config.inital_rotation_weighting,
   //                  icp_config.inital_rotation_weighting);
+  if (!node_ptr->has_parameter("icp_min_match_ratio")) {
+    node_ptr->declare_parameter("icp_min_match_ratio",
+                                icp_config.min_match_ratio);
+  }
+  if (!node_ptr->has_parameter("icp_subsample_keep_ratio")) {
+    node_ptr->declare_parameter("icp_subsample_keep_ratio",
+                                icp_config.subsample_keep_ratio);
+  }
+  if (!node_ptr->has_parameter("icp_mini_batch_size")) {
+    node_ptr->declare_parameter("icp_mini_batch_size",
+                                icp_config.mini_batch_size);
+  }
+  if (!node_ptr->has_parameter("icp_refine_roll_pitch")) {
+    node_ptr->declare_parameter("icp_refine_roll_pitch",
+                                icp_config.refine_roll_pitch);
+  }
+  if (!node_ptr->has_parameter("icp_inital_translation_weighting")) {
+    node_ptr->declare_parameter("icp_inital_translation_weighting",
+                                icp_config.inital_translation_weighting);
+  }
+  if (!node_ptr->has_parameter("icp_inital_rotation_weighting")) {
+    node_ptr->declare_parameter("icp_inital_rotation_weighting",
+                                icp_config.inital_rotation_weighting);
+  }
 
-  node_ptr->declare_parameter("icp_min_match_ratio",
-                              icp_config.min_match_ratio);
-  node_ptr->declare_parameter("icp_subsample_keep_ratio",
-                              icp_config.subsample_keep_ratio);
-  node_ptr->declare_parameter("icp_mini_batch_size",
-                              icp_config.mini_batch_size);
-  node_ptr->declare_parameter("icp_refine_roll_pitch",
-                              icp_config.refine_roll_pitch);
-  node_ptr->declare_parameter("icp_inital_translation_weighting",
-                              icp_config.inital_translation_weighting);
-  node_ptr->declare_parameter("icp_inital_rotation_weighting",
-                              icp_config.inital_rotation_weighting);
   node_ptr->get_parameter("icp_min_match_ratio", icp_config.min_match_ratio);
   node_ptr->get_parameter("icp_subsample_keep_ratio",
                           icp_config.subsample_keep_ratio);
@@ -138,36 +156,70 @@ inline TsdfIntegratorBase::Config getTsdfIntegratorConfigFromRosParam(
   //                  integrator_config.integration_order_mode,
   //                  integrator_config.integration_order_mode);
 
-  node_ptr->declare_parameter("voxel_carving_enabled",
-                              integrator_config.voxel_carving_enabled);
-  node_ptr->declare_parameter("truncation_distance", truncation_distance);
-  node_ptr->declare_parameter("max_ray_length_m",
-                              integrator_config.max_ray_length_m);
-  node_ptr->declare_parameter("min_ray_length_m",
-                              integrator_config.min_ray_length_m);
-  node_ptr->declare_parameter("max_weight", max_weight);
-  node_ptr->declare_parameter("use_const_weight",
-                              integrator_config.use_const_weight);
-  node_ptr->declare_parameter("use_weight_dropoff",
-                              integrator_config.use_weight_dropoff);
-  node_ptr->declare_parameter("allow_clear", integrator_config.allow_clear);
-  node_ptr->declare_parameter("start_voxel_subsampling_factor",
-                              integrator_config.start_voxel_subsampling_factor);
-  node_ptr->declare_parameter("max_consecutive_ray_collisions",
-                              integrator_config.max_consecutive_ray_collisions);
-  node_ptr->declare_parameter("clear_checks_every_n_frames",
-                              integrator_config.clear_checks_every_n_frames);
-  node_ptr->declare_parameter("max_integration_time_s",
-                              integrator_config.max_integration_time_s);
-  node_ptr->declare_parameter("anti_grazing",
-                              integrator_config.enable_anti_grazing);
-  node_ptr->declare_parameter(
-      "use_sparsity_compensation_factor",
-      integrator_config.use_sparsity_compensation_factor);
-  node_ptr->declare_parameter("sparsity_compensation_factor",
-                              integrator_config.sparsity_compensation_factor);
-  node_ptr->declare_parameter("integration_order_mode",
-                              integrator_config.integration_order_mode);
+  if (!node_ptr->has_parameter("voxel_carving_enabled")) {
+    node_ptr->declare_parameter("voxel_carving_enabled",
+                                integrator_config.voxel_carving_enabled);
+  }
+  if (!node_ptr->has_parameter("truncation_distance")) {
+    node_ptr->declare_parameter("truncation_distance", truncation_distance);
+  }
+  if (!node_ptr->has_parameter("max_ray_length_m")) {
+    node_ptr->declare_parameter("max_ray_length_m",
+                                integrator_config.max_ray_length_m);
+  }
+  if (!node_ptr->has_parameter("min_ray_length_m")) {
+    node_ptr->declare_parameter("min_ray_length_m",
+                                integrator_config.min_ray_length_m);
+  }
+  if (!node_ptr->has_parameter("max_weight")) {
+    node_ptr->declare_parameter("max_weight", max_weight);
+  }
+  if (!node_ptr->has_parameter("use_const_weight")) {
+    node_ptr->declare_parameter("use_const_weight",
+                                integrator_config.use_const_weight);
+  }
+  if (!node_ptr->has_parameter("use_weight_dropoff")) {
+    node_ptr->declare_parameter("use_weight_dropoff",
+                                integrator_config.use_weight_dropoff);
+  }
+  if (!node_ptr->has_parameter("allow_clear")) {
+    node_ptr->declare_parameter("allow_clear", integrator_config.allow_clear);
+  }
+  if (!node_ptr->has_parameter("start_voxel_subsampling_factor")) {
+    node_ptr->declare_parameter(
+        "start_voxel_subsampling_factor",
+        integrator_config.start_voxel_subsampling_factor);
+  }
+  if (!node_ptr->has_parameter("max_consecutive_ray_collisions")) {
+    node_ptr->declare_parameter(
+        "max_consecutive_ray_collisions",
+        integrator_config.max_consecutive_ray_collisions);
+  }
+  if (!node_ptr->has_parameter("clear_checks_every_n_frames")) {
+    node_ptr->declare_parameter("clear_checks_every_n_frames",
+                                integrator_config.clear_checks_every_n_frames);
+  }
+  if (!node_ptr->has_parameter("max_integration_time_s")) {
+    node_ptr->declare_parameter("max_integration_time_s",
+                                integrator_config.max_integration_time_s);
+  }
+  if (!node_ptr->has_parameter("anti_grazing")) {
+    node_ptr->declare_parameter("anti_grazing",
+                                integrator_config.enable_anti_grazing);
+  }
+  if (!node_ptr->has_parameter("use_sparsity_compensation_factor")) {
+    node_ptr->declare_parameter(
+        "use_sparsity_compensation_factor",
+        integrator_config.use_sparsity_compensation_factor);
+  }
+  if (!node_ptr->has_parameter("sparsity_compensation_factor")) {
+    node_ptr->declare_parameter("sparsity_compensation_factor",
+                                integrator_config.sparsity_compensation_factor);
+  }
+  if (!node_ptr->has_parameter("integration_order_mode")) {
+    node_ptr->declare_parameter("integration_order_mode",
+                                integrator_config.integration_order_mode);
+  }
 
   node_ptr->get_parameter("voxel_carving_enabled",
                           integrator_config.voxel_carving_enabled);
@@ -250,22 +302,38 @@ inline EsdfIntegrator::Config getEsdfIntegratorConfigFromRosParam(
   //                  esdf_integrator_config.add_occupied_crust,
   //                  esdf_integrator_config.add_occupied_crust);
 
-  node_ptr->declare_parameter("esdf_euclidean_distance",
-                              esdf_integrator_config.full_euclidean_distance);
-  node_ptr->declare_parameter("esdf_max_distance_m",
-                              esdf_integrator_config.max_distance_m);
-  node_ptr->declare_parameter("esdf_min_distance_m",
-                              esdf_integrator_config.min_distance_m);
-  node_ptr->declare_parameter("esdf_default_distance_m",
-                              esdf_integrator_config.default_distance_m);
-  node_ptr->declare_parameter("esdf_min_diff_m",
-                              esdf_integrator_config.min_diff_m);
-  node_ptr->declare_parameter("clear_sphere_radius",
-                              esdf_integrator_config.clear_sphere_radius);
-  node_ptr->declare_parameter("occupied_sphere_radius",
-                              esdf_integrator_config.occupied_sphere_radius);
-  node_ptr->declare_parameter("esdf_add_occupied_crust",
-                              esdf_integrator_config.add_occupied_crust);
+  if (!node_ptr->has_parameter("esdf_euclidean_distance")) {
+    node_ptr->declare_parameter("esdf_euclidean_distance",
+                                esdf_integrator_config.full_euclidean_distance);
+  }
+  if (!node_ptr->has_parameter("esdf_max_distance_m")) {
+    node_ptr->declare_parameter("esdf_max_distance_m",
+                                esdf_integrator_config.max_distance_m);
+  }
+  if (!node_ptr->has_parameter("esdf_min_distance_m")) {
+    node_ptr->declare_parameter("esdf_min_distance_m",
+                                esdf_integrator_config.min_distance_m);
+  }
+  if (!node_ptr->has_parameter("esdf_default_distance_m")) {
+    node_ptr->declare_parameter("esdf_default_distance_m",
+                                esdf_integrator_config.default_distance_m);
+  }
+  if (!node_ptr->has_parameter("esdf_min_diff_m")) {
+    node_ptr->declare_parameter("esdf_min_diff_m",
+                                esdf_integrator_config.min_diff_m);
+  }
+  if (!node_ptr->has_parameter("clear_sphere_radius")) {
+    node_ptr->declare_parameter("clear_sphere_radius",
+                                esdf_integrator_config.clear_sphere_radius);
+  }
+  if (!node_ptr->has_parameter("occupied_sphere_radius")) {
+    node_ptr->declare_parameter("occupied_sphere_radius",
+                                esdf_integrator_config.occupied_sphere_radius);
+  }
+  if (!node_ptr->has_parameter("esdf_add_occupied_crust")) {
+    node_ptr->declare_parameter("esdf_add_occupied_crust",
+                                esdf_integrator_config.add_occupied_crust);
+  }
 
   node_ptr->get_parameter("esdf_euclidean_distance",
                           esdf_integrator_config.full_euclidean_distance);
@@ -300,10 +368,18 @@ inline MeshIntegratorConfig getMeshIntegratorConfigFromRosParam(
   //                  mesh_integrator_config.min_weight);
   // nh_private.param("mesh_use_color", mesh_integrator_config.use_color,
   //                  mesh_integrator_config.use_color);
-  node_ptr->declare_parameter("mesh_min_weight",
-                              mesh_integrator_config.min_weight);
-  node_ptr->declare_parameter("mesh_use_color",
-                              mesh_integrator_config.use_color);
+  // node_ptr->declare_parameter("mesh_min_weight",
+  //                             mesh_integrator_config.min_weight);
+  // node_ptr->declare_parameter("mesh_use_color",
+  //                             mesh_integrator_config.use_color);
+  if (!node_ptr->has_parameter("mesh_min_weight")) {
+    node_ptr->declare_parameter("mesh_min_weight",
+                                mesh_integrator_config.min_weight);
+  }
+  if (!node_ptr->has_parameter("mesh_use_color")) {
+    node_ptr->declare_parameter("mesh_use_color",
+                                mesh_integrator_config.use_color);
+  }
   node_ptr->get_parameter("mesh_min_weight", mesh_integrator_config.min_weight);
   node_ptr->get_parameter("mesh_use_color", mesh_integrator_config.use_color);
 

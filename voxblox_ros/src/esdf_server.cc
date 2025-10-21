@@ -79,11 +79,20 @@ void EsdfServer::setupRos() {
   //                   publish_traversable_);
   // nh_private_.param("traversability_radius", traversability_radius_,
   //                   traversability_radius_);
-  node_ptr_->declare_parameter("clear_sphere_for_planning",
-                               clear_sphere_for_planning_);
-  node_ptr_->declare_parameter("publish_esdf_map", publish_esdf_map_);
-  node_ptr_->declare_parameter("publish_traversable", publish_traversable_);
-  node_ptr_->declare_parameter("traversability_radius", traversability_radius_);
+  if (!node_ptr_->has_parameter("clear_sphere_for_planning")) {
+    node_ptr_->declare_parameter("clear_sphere_for_planning",
+                                 clear_sphere_for_planning_);
+  }
+  if (!node_ptr_->has_parameter("publish_esdf_map")) {
+    node_ptr_->declare_parameter("publish_esdf_map", publish_esdf_map_);
+  }
+  if (!node_ptr_->has_parameter("publish_traversable")) {
+    node_ptr_->declare_parameter("publish_traversable", publish_traversable_);
+  }
+  if (!node_ptr_->has_parameter("traversability_radius")) {
+    node_ptr_->declare_parameter("traversability_radius",
+                                 traversability_radius_);
+  }
   node_ptr_->get_parameter("clear_sphere_for_planning",
                            clear_sphere_for_planning_);
   node_ptr_->get_parameter("publish_esdf_map", publish_esdf_map_);
@@ -91,10 +100,10 @@ void EsdfServer::setupRos() {
   node_ptr_->get_parameter("traversability_radius", traversability_radius_);
 
   double update_esdf_every_n_sec = 1.0;
-  // nh_private_.param("update_esdf_every_n_sec", update_esdf_every_n_sec,
-  //                   update_esdf_every_n_sec);
-  node_ptr_->declare_parameter("update_esdf_every_n_sec",
-                               update_esdf_every_n_sec);
+  if (!node_ptr_->has_parameter("update_esdf_every_n_sec")) {
+    node_ptr_->declare_parameter("update_esdf_every_n_sec",
+                                 update_esdf_every_n_sec);
+  }
   node_ptr_->get_parameter("update_esdf_every_n_sec", update_esdf_every_n_sec);
 
   if (update_esdf_every_n_sec > 0.0) {

@@ -52,8 +52,8 @@ Transformer::Transformer(rclcpp::Node* node_ptr)
   // C is the sensor frame that produces the depth data). It is possible to
   // specify T_C_D and set invert_static_tranform to true.
 
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(node_ptr_->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   // TODO(miferco97): Re-enable when we have tf2 for ROS
 
@@ -104,6 +104,11 @@ Transformer::Transformer(rclcpp::Node* node_ptr)
       }
     }
   }
+}
+void Transformer::transformCallback(
+    const geometry_msgs::msg::TransformStamped& transform_msg) {
+  // Add the new transform to the queue.
+  transform_queue_.push_back(transform_msg);
 }
 
 bool Transformer::lookupTransform(const std::string& from_frame,

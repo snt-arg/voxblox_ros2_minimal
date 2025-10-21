@@ -75,7 +75,12 @@ TsdfServer::TsdfServer(rclcpp::Node* node_ptr, const TsdfMap::Config& config,
 
   // mesh_pub_ = nh_private_.advertise<voxblox_msgs::msg::Mesh>("mesh", 1,
   // true);
-  node_ptr_->declare_parameter("pointcloud_queue_size", pointcloud_queue_size_);
+  mesh_pub_ = node_ptr_->create_publisher<voxblox_msgs::msg::Mesh>("mesh", 1);
+
+  if (!node_ptr_->has_parameter("pointcloud_queue_size")) {
+    node_ptr_->declare_parameter("pointcloud_queue_size",
+                                 pointcloud_queue_size_);
+  }
   node_ptr_->get_parameter("pointcloud_queue_size", pointcloud_queue_size_);
 
   pointcloud_sub_ =
@@ -99,7 +104,9 @@ TsdfServer::TsdfServer(rclcpp::Node* node_ptr, const TsdfMap::Config& config,
   tsdf_map_sub_ = node_ptr_->create_subscription<voxblox_msgs::msg::Layer>(
       "tsdf_map_in", 1,
       std::bind(&TsdfServer::tsdfMapCallback, this, std::placeholders::_1));
-  node_ptr_->declare_parameter("publish_tsdf_map", publish_tsdf_map_);
+  if (!node_ptr_->has_parameter("publish_tsdf_map")) {
+    node_ptr_->declare_parameter("publish_tsdf_map", publish_tsdf_map_);
+  }
   node_ptr_->get_parameter("publish_tsdf_map", publish_tsdf_map_);
 
   if (use_freespace_pointcloud_) {
@@ -126,8 +133,13 @@ TsdfServer::TsdfServer(rclcpp::Node* node_ptr, const TsdfMap::Config& config,
     icp_transform_pub_ =
         node_ptr_->create_publisher<geometry_msgs::msg::TransformStamped>(
             "icp_transform", 1);
-    node_ptr_->declare_parameter("icp_corrected_frame", icp_corrected_frame_);
-    node_ptr_->declare_parameter("pose_corrected_frame", pose_corrected_frame_);
+    if (!node_ptr_->has_parameter("icp_corrected_frame")) {
+      node_ptr_->declare_parameter("icp_corrected_frame", icp_corrected_frame_);
+    }
+    if (!node_ptr_->has_parameter("pose_corrected_frame")) {
+      node_ptr_->declare_parameter("pose_corrected_frame",
+                                   pose_corrected_frame_);
+    }
     node_ptr_->get_parameter("icp_corrected_frame", icp_corrected_frame_);
     node_ptr_->get_parameter("pose_corrected_frame", pose_corrected_frame_);
   }
@@ -137,7 +149,10 @@ TsdfServer::TsdfServer(rclcpp::Node* node_ptr, const TsdfMap::Config& config,
 
   std::string method("merged");
   // nh_private_.param("method", method, method);
-  node_ptr_->declare_parameter("method", method);
+  // node_ptr_->declare_parameter("method", method);
+  if (!node_ptr_->has_parameter("method")) {
+    node_ptr_->declare_parameter("method", method);
+  }
   node_ptr_->get_parameter("method", method);
 
   if (method.compare("simple") == 0) {
@@ -198,8 +213,12 @@ TsdfServer::TsdfServer(rclcpp::Node* node_ptr, const TsdfMap::Config& config,
   double update_mesh_every_n_sec = 1.0;
   // nh_private_.param("update_mesh_every_n_sec", update_mesh_every_n_sec,
   //                   update_mesh_every_n_sec);
-  node_ptr_->declare_parameter("update_mesh_every_n_sec",
-                               update_mesh_every_n_sec);
+  /* node_ptr_->declare_parameter("update_mesh_every_n_sec",
+                               update_mesh_every_n_sec); */
+  if (!node_ptr_->has_parameter("update_mesh_every_n_sec")) {
+    node_ptr_->declare_parameter("update_mesh_every_n_sec",
+                                 update_mesh_every_n_sec);
+  }
   node_ptr_->get_parameter("update_mesh_every_n_sec", update_mesh_every_n_sec);
 
   if (update_mesh_every_n_sec > 0.0) {
@@ -214,8 +233,10 @@ TsdfServer::TsdfServer(rclcpp::Node* node_ptr, const TsdfMap::Config& config,
   double publish_map_every_n_sec = 1.0;
   // nh_private_.param("publish_map_every_n_sec", publish_map_every_n_sec,
   //                   publish_map_every_n_sec);
-  node_ptr_->declare_parameter("publish_map_every_n_sec",
-                               publish_map_every_n_sec);
+  if (!node_ptr_->has_parameter("publish_map_every_n_sec")) {
+    node_ptr_->declare_parameter("publish_map_every_n_sec",
+                                 publish_map_every_n_sec);
+  }
   node_ptr_->get_parameter("publish_map_every_n_sec", publish_map_every_n_sec);
 
   if (publish_map_every_n_sec > 0.0) {
@@ -271,28 +292,61 @@ void TsdfServer::getServerConfigFromRosParam(rclcpp::Node* node_ptr) {
   //                  intensity_colormap);
   // nh_private.param("intensity_max_value", intensity_max_value,
   //                  intensity_max_value);
-  node_ptr->declare_parameter("min_time_between_msgs_sec",
-                              min_time_between_msgs_sec);
-  node_ptr->declare_parameter("max_block_distance_from_body",
-                              max_block_distance_from_body_);
-  node_ptr->declare_parameter("slice_level", slice_level_);
-  node_ptr->declare_parameter("world_frame", world_frame_);
-  node_ptr->declare_parameter("publish_pointclouds_on_update",
-                              publish_pointclouds_on_update_);
-  node_ptr->declare_parameter("publish_slices", publish_slices_);
-  node_ptr->declare_parameter("publish_pointclouds", publish_pointclouds_);
-  node_ptr->declare_parameter("use_freespace_pointcloud",
-                              use_freespace_pointcloud_);
-  node_ptr->declare_parameter("pointcloud_queue_size", pointcloud_queue_size_);
-  node_ptr->declare_parameter("enable_icp", enable_icp_);
-  node_ptr->declare_parameter("accumulate_icp_corrections",
-                              accumulate_icp_corrections_);
-  node_ptr->declare_parameter("verbose", verbose_);
-  node_ptr->declare_parameter("mesh_filename", mesh_filename_);
+  if (!node_ptr->has_parameter("min_time_between_msgs_sec")) {
+    node_ptr->declare_parameter("min_time_between_msgs_sec",
+                                min_time_between_msgs_sec);
+  }
+  if (!node_ptr->has_parameter("max_block_distance_from_body")) {
+    node_ptr->declare_parameter("max_block_distance_from_body",
+                                max_block_distance_from_body_);
+  }
+  if (!node_ptr->has_parameter("slice_level")) {
+    node_ptr->declare_parameter("slice_level", slice_level_);
+  }
+  if (!node_ptr->has_parameter("world_frame")) {
+    node_ptr->declare_parameter("world_frame", world_frame_);
+  }
+  if (!node_ptr->has_parameter("publish_pointclouds_on_update")) {
+    node_ptr->declare_parameter("publish_pointclouds_on_update",
+                                publish_pointclouds_on_update_);
+  }
+  if (!node_ptr->has_parameter("publish_slices")) {
+    node_ptr->declare_parameter("publish_slices", publish_slices_);
+  }
+  if (!node_ptr->has_parameter("publish_pointclouds")) {
+    node_ptr->declare_parameter("publish_pointclouds", publish_pointclouds_);
+  }
+  if (!node_ptr->has_parameter("use_freespace_pointcloud")) {
+    node_ptr->declare_parameter("use_freespace_pointcloud",
+                                use_freespace_pointcloud_);
+  }
+  if (!node_ptr->has_parameter("pointcloud_queue_size")) {
+    node_ptr->declare_parameter("pointcloud_queue_size",
+                                pointcloud_queue_size_);
+  }
+  if (!node_ptr->has_parameter("enable_icp")) {
+    node_ptr->declare_parameter("enable_icp", enable_icp_);
+  }
+  if (!node_ptr->has_parameter("accumulate_icp_corrections")) {
+    node_ptr->declare_parameter("accumulate_icp_corrections",
+                                accumulate_icp_corrections_);
+  }
+  if (!node_ptr->has_parameter("verbose")) {
+    node_ptr->declare_parameter("verbose", verbose_);
+  }
+  if (!node_ptr->has_parameter("mesh_filename")) {
+    node_ptr->declare_parameter("mesh_filename", mesh_filename_);
+  }
   int color_mode_int = static_cast<int>(color_mode_);
-  node_ptr->declare_parameter("color_mode", color_mode_int);
-  node_ptr->declare_parameter("intensity_colormap", std::string("rainbow"));
-  node_ptr->declare_parameter("intensity_max_value", kDefaultMaxIntensity);
+  if (!node_ptr->has_parameter("color_mode")) {
+    node_ptr->declare_parameter("color_mode", color_mode_int);
+  }
+  if (!node_ptr->has_parameter("intensity_colormap")) {
+    node_ptr->declare_parameter("intensity_colormap", std::string("rainbow"));
+  }
+  if (!node_ptr->has_parameter("intensity_max_value")) {
+    node_ptr->declare_parameter("intensity_max_value", kDefaultMaxIntensity);
+  }
 
   node_ptr->get_parameter("min_time_between_msgs_sec",
                           min_time_between_msgs_sec);

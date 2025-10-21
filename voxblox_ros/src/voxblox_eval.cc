@@ -7,15 +7,22 @@
 #include <pcl/conversions.h>
 #include <pcl/filters/filter.h>
 #include <pcl/io/ply_io.h>
+#include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <std_srvs/Empty.h>
-#include <tf/transform_listener.h>
-#include <visualization_msgs/MarkerArray.h>
+// #include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.hpp>
+// #include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
+
+// #include <tf/transform_listener.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <std_srvs/srv/empty.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <voxblox/core/esdf_map.h>
 #include <voxblox/core/occupancy_map.h>
@@ -36,15 +43,14 @@ namespace voxblox {
 
 class VoxbloxEvaluator {
  public:
-  VoxbloxEvaluator(const ros::NodeHandle& nh,
-                   const ros::NodeHandle& nh_private);
+  VoxbloxEvaluator(rclcpp::Node* node_ptr);
+
   void evaluate();
   void visualize();
   bool shouldExit() const { return !visualize_; }
 
  private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle nh_private_;
+  rclcpp::Node* node_ptr_;
 
   // Whether to do the visualizations (involves generating mesh of the TSDF
   // layer) and keep alive (for visualization) after finishing the eval.
@@ -62,8 +68,10 @@ class VoxbloxEvaluator {
   Transformation T_V_G_;
 
   // Visualization publishers.
-  ros::Publisher mesh_pub_;
-  ros::Publisher gt_ptcloud_pub_;
+  // ros::Publisher mesh_pub_;
+  // ros::Publisher gt_ptcloud_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr mesh_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr gt_ptcloud_pub_;
 
   // Core data to compare.
   std::shared_ptr<Layer<TsdfVoxel>> tsdf_layer_;
@@ -77,25 +85,34 @@ class VoxbloxEvaluator {
   std::shared_ptr<MeshIntegrator<TsdfVoxel>> mesh_integrator_;
 };
 
-VoxbloxEvaluator::VoxbloxEvaluator(const ros::NodeHandle& nh,
-                                   const ros::NodeHandle& nh_private)
-    : nh_(nh),
-      nh_private_(nh_private),
+VoxbloxEvaluator::VoxbloxEvaluator(rclcpp::Node* node_ptr)
+
+    : node_ptr_(node_ptr),
       visualize_(true),
       recolor_by_error_(false),
       frame_id_("world") {
   // Load parameters.
-  nh_private_.param("visualize", visualize_, visualize_);
-  nh_private_.param("recolor_by_error", recolor_by_error_, recolor_by_error_);
-  nh_private_.param("frame_id", frame_id_, frame_id_);
+
+  // nh_private_.param("visualize", visualize_, visualize_);
+  // nh_private_.param("recolor_by_error", recolor_by_error_,
+  // recolor_by_error_); nh_private_.param("frame_id", frame_id_, frame_id_);
+  node_ptr_->declare_parameter("visualize", visualize_);
+  node_ptr_->declare_parameter("recolor_by_error", recolor_by_error_);
+  node_ptr_->declare_parameter("frame_id", frame_id_);
+  node_ptr_->get_parameter("visualize", visualize_);
+  node_ptr_->get_parameter("recolor_by_error", recolor_by_error_);
+  node_ptr_->get_parameter("frame_id", frame_id_);
 
   // Load transformations.
   XmlRpc::XmlRpcValue T_V_G_xml;
-  if (nh_private_.getParam("T_V_G", T_V_G_xml)) {
+  // if (nh_private_.getParam("T_V_G", T_V_G_xml)) {
+  if (node_ptr_->get_parameter("T_V_G", T_V_G_xml)) {
     kindr::minimal::xmlRpcToKindr(T_V_G_xml, &T_V_G_);
     bool invert_static_tranform = false;
-    nh_private_.param("invert_T_V_G", invert_static_tranform,
-                      invert_static_tranform);
+    // nh_private_.param("invert_T_V_G", invert_static_tranform,
+    //                   invert_static_tranform);
+    node_ptr_->declare_parameter("invert_T_V_G", invert_static_tranform);
+    node_ptr_->get_parameter("invert_T_V_G", invert_static_tranform);
     if (invert_static_tranform) {
       T_V_G_ = T_V_G_.inverse();
     }
@@ -105,10 +122,10 @@ VoxbloxEvaluator::VoxbloxEvaluator(const ros::NodeHandle& nh,
   // Just exit if there's any issues here (this is just an evaluation node,
   // after all).
   std::string voxblox_file_path, gt_file_path;
-  CHECK(nh_private_.getParam("voxblox_file_path", voxblox_file_path))
+  CHECK(node_ptr_->get_parameter("voxblox_file_path", voxblox_file_path))
       << "No file path provided for voxblox map! Set the \"voxblox_file_path\" "
          "param.";
-  CHECK(nh_private_.getParam("gt_file_path", gt_file_path))
+  CHECK(node_ptr_->get_parameter("gt_file_path", gt_file_path))
       << "No file path provided for ground truth pointcloud! Set the "
          "\"gt_file_path\" param.";
 
@@ -124,13 +141,24 @@ VoxbloxEvaluator::VoxbloxEvaluator(const ros::NodeHandle& nh,
 
   // If doing visualizations, initialize the publishers.
   if (visualize_) {
+    // mesh_pub_ =
+    //     nh_private_.advertise<visualization_msgs::MarkerArray>("mesh", 1,
+    //     true);
+    // gt_ptcloud_pub_ =
+    // nh_private_.advertise<pcl::PointCloud<pcl::PointXYZRGB>>(
+    //     "gt_ptcloud", 1, true);
     mesh_pub_ =
-        nh_private_.advertise<visualization_msgs::MarkerArray>("mesh", 1, true);
-    gt_ptcloud_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZRGB>>(
-        "gt_ptcloud", 1, true);
+        node_ptr_->create_publisher<visualization_msgs::msg::MarkerArray>(
+            "mesh", 1);
+    gt_ptcloud_pub_ =
+        node_ptr_->create_publisher<sensor_msgs::msg::PointCloud2>("gt_ptcloud",
+                                                                   1);
 
     std::string color_mode("color");
-    nh_private_.param("color_mode", color_mode, color_mode);
+    // nh_private_.param("color_mode", color_mode, color_mode);
+    node_ptr_->declare_parameter("color_mode", color_mode);
+    node_ptr_->get_parameter("color_mode", color_mode);
+
     if (color_mode == "color") {
       color_mode_ = ColorMode::kColor;
     } else if (color_mode == "height") {
@@ -150,8 +178,11 @@ VoxbloxEvaluator::VoxbloxEvaluator(const ros::NodeHandle& nh,
 void VoxbloxEvaluator::evaluate() {
   // First, transform the pointcloud into the correct coordinate frame.
   // First, rotate the pointcloud into the world frame.
-  pcl::transformPointCloud(gt_ptcloud_, gt_ptcloud_,
-                           T_V_G_.getTransformationMatrix());
+  // auto transformation = T_V_G_.getTransformationMatrix();
+  tf2::Transform transformation;
+  tf::transformKindrToTF(T_V_G_, &transformation);
+
+  pcl_ros::transformPointCloud(gt_ptcloud_, gt_ptcloud_, transformation);
 
   // Go through each point, use trilateral interpolation to figure out the
   // distance at that point.
@@ -236,32 +267,44 @@ void VoxbloxEvaluator::visualize() {
   mesh_integrator_->generateMesh(only_mesh_updated_blocks, clear_updated_flag);
 
   // Publish mesh.
-  visualization_msgs::MarkerArray marker_array;
+  visualization_msgs::msg::MarkerArray marker_array;
   marker_array.markers.resize(1);
   marker_array.markers[0].header.frame_id = frame_id_;
   fillMarkerWithMesh(mesh_layer_, color_mode_, &marker_array.markers[0]);
-  mesh_pub_.publish(marker_array);
+  mesh_pub_->publish(marker_array);
 
   gt_ptcloud_.header.frame_id = frame_id_;
-  gt_ptcloud_pub_.publish(gt_ptcloud_);
+  sensor_msgs::msg::PointCloud2 gt_ptcloud_msg;
+  pcl::toROSMsg(gt_ptcloud_, gt_ptcloud_msg);
+  gt_ptcloud_pub_->publish(gt_ptcloud_msg);
   std::cout << "Finished visualizing.\n";
 }
 
 }  // namespace voxblox
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "voxblox_node");
-  google::InitGoogleLogging(argv[0]);
-  google::ParseCommandLineFlags(&argc, &argv, false);
-  google::InstallFailureSignalHandler();
-  ros::NodeHandle nh;
-  ros::NodeHandle nh_private("~");
+  // ros::init(argc, argv, "voxblox_node");
+  // Let gflags re-parse later if needed (optional)
+  gflags::AllowCommandLineReparsing();
 
-  voxblox::VoxbloxEvaluator eval(nh, nh_private);
+  // Init logging first (so FLAGS_* affect glog)
+  google::InitGoogleLogging(argv[0]);
+
+  // Parse only non-help flags and REMOVE recognized ones from argv
+  // so the remaining argv is clean for rclcpp.
+  gflags::ParseCommandLineNonHelpFlags(&argc, &argv, /*remove_flags=*/true);
+
+  rclcpp::init(argc, argv);
+  // ros::NodeHandle nh;
+  // ros::NodeHandle nh_private("~");
+  auto nh = rclcpp::Node::make_shared("voxblox_eval");
+
+  voxblox::VoxbloxEvaluator eval(nh.get());
   eval.evaluate();
 
   if (!eval.shouldExit()) {
-    ros::spin();
+    rclcpp::spin(nh);
+    // ros::spin();
   }
   return 0;
 }

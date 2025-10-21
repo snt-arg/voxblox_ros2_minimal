@@ -1,10 +1,12 @@
 #include "voxblox_ros/intensity_server.h"
+#include "voxblox_ros/ptcloud_vis.h"
 
 namespace voxblox {
 
-IntensityServer::IntensityServer(const ros::NodeHandle& nh,
-                                 const ros::NodeHandle& nh_private)
-    : TsdfServer(nh, nh_private),
+IntensityServer::IntensityServer(rclcpp::Node* node_ptr)
+
+    : node_ptr_(node_ptr),
+      TsdfServer(node_ptr),
       focal_length_px_(400.0f),
       subsample_factor_(12) {
   cache_mesh_ = true;
@@ -16,37 +18,59 @@ IntensityServer::IntensityServer(const ros::NodeHandle& nh,
                                                       intensity_layer_.get()));
 
   // Get ROS params:
-  nh_private_.param("intensity_focal_length", focal_length_px_,
-                    focal_length_px_);
-  nh_private_.param("subsample_factor", subsample_factor_, subsample_factor_);
+  // nh_private_.param("intensity_focal_length", focal_length_px_,
+  //                   focal_length_px_);
+  // nh_private_.param("subsample_factor", subsample_factor_,
+  // subsample_factor_);
+  node_ptr_->declare_parameter("intensity_focal_length", focal_length_px_);
+  node_ptr_->declare_parameter("subsample_factor", subsample_factor_);
+  node_ptr_->get_parameter("intensity_focal_length", focal_length_px_);
+  node_ptr_->get_parameter("subsample_factor", subsample_factor_);
 
   float intensity_min_value = 10.0f;
   float intensity_max_value = 40.0f;
-  nh_private_.param("intensity_min_value", intensity_min_value,
-                    intensity_min_value);
-  nh_private_.param("intensity_max_value", intensity_max_value,
-                    intensity_max_value);
+  // nh_private_.param("intensity_min_value", intensity_min_value,
+  //                   intensity_min_value);
+  // nh_private_.param("intensity_max_value", intensity_max_value,
+  //                   intensity_max_value);
+  node_ptr_->declare_parameter("intensity_min_value", intensity_min_value);
+  node_ptr_->declare_parameter("intensity_max_value", intensity_max_value);
+  node_ptr_->get_parameter("intensity_min_value", intensity_min_value);
+  node_ptr_->get_parameter("intensity_max_value", intensity_max_value);
 
   FloatingPoint intensity_max_distance =
       intensity_integrator_->getMaxDistance();
-  nh_private_.param("intensity_max_distance", intensity_max_distance,
-                    intensity_max_distance);
+  // nh_private_.param("intensity_max_distance", intensity_max_distance,
+  //                   intensity_max_distance);
+  node_ptr_->declare_parameter("intensity_max_distance",
+                               intensity_max_distance);
+  node_ptr_->get_parameter("intensity_max_distance", intensity_max_distance);
   intensity_integrator_->setMaxDistance(intensity_max_distance);
 
   // Publishers for output.
+  // intensity_pointcloud_pub_ =
+  //     nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
+  //         "intensity_pointcloud", 1, true);
+  // intensity_mesh_pub_ =
+  //     nh_private_.advertise<voxblox_msgs::Mesh>("intensity_mesh", 1, true);
   intensity_pointcloud_pub_ =
-      nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
-          "intensity_pointcloud", 1, true);
+      node_ptr_->create_publisher<sensor_msgs::msg::PointCloud2>(
+          "intensity_pointcloud", 1);
   intensity_mesh_pub_ =
-      nh_private_.advertise<voxblox_msgs::Mesh>("intensity_mesh", 1, true);
+      node_ptr_->create_publisher<voxblox_msgs::msg::Mesh>("intensity_mesh", 1);
 
   color_map_.reset(new IronbowColorMap());
   color_map_->setMinValue(intensity_min_value);
   color_map_->setMaxValue(intensity_max_value);
 
   // Set up subscriber.
-  intensity_image_sub_ = nh_private_.subscribe(
-      "intensity_image", 1, &IntensityServer::intensityImageCallback, this);
+  // intensity_image_sub_ = nh_private_.subscribe(
+  //     "intensity_image", 1, &IntensityServer::intensityImageCallback, this);
+  intensity_image_sub_ =
+      node_ptr_->create_subscription<sensor_msgs::msg::Image>(
+          "intensity_image", 1,
+          std::bind(&IntensityServer::intensityImageCallback, this,
+                    std::placeholders::_1));
 }
 
 void IntensityServer::updateMesh() {
@@ -56,7 +80,7 @@ void IntensityServer::updateMesh() {
   timing::Timer publish_mesh_timer("intensity_mesh/publish");
   recolorVoxbloxMeshMsgByIntensity(*intensity_layer_, color_map_,
                                    &cached_mesh_msg_);
-  intensity_mesh_pub_.publish(cached_mesh_msg_);
+  intensity_mesh_pub_->publish(cached_mesh_msg_);
   publish_mesh_timer.Stop();
 }
 
@@ -67,13 +91,15 @@ void IntensityServer::publishPointclouds() {
   createIntensityPointcloudFromIntensityLayer(*intensity_layer_, &pointcloud);
 
   pointcloud.header.frame_id = world_frame_;
-  intensity_pointcloud_pub_.publish(pointcloud);
+  sensor_msgs::msg::PointCloud2 pointcloud_msg;
+  pcl::toROSMsg(pointcloud, pointcloud_msg);
+  intensity_pointcloud_pub_->publish(pointcloud_msg);
 
   TsdfServer::publishPointclouds();
 }
 
 void IntensityServer::intensityImageCallback(
-    const sensor_msgs::ImageConstPtr& image) {
+    const sensor_msgs::msg::Image::SharedPtr image) {
   CHECK(intensity_layer_);
   CHECK(intensity_integrator_);
   CHECK(image);
@@ -81,7 +107,7 @@ void IntensityServer::intensityImageCallback(
   Transformation T_G_C;
   if (!transformer_.lookupTransform(image->header.frame_id, world_frame_,
                                     image->header.stamp, &T_G_C)) {
-    ROS_WARN_THROTTLE(10, "Failed to look up intensity transform!");
+    // ROS_WARN_THROTTLE(10, "Failed to look up intensity transform!");
     return;
   }
 

@@ -5,10 +5,17 @@
 
 int main(int argc, char** argv) {
   // ros::init(argc, argv, "voxblox");
-  rclcpp::init(argc, argv);
+  // Let gflags re-parse later if needed (optional)
+  gflags::AllowCommandLineReparsing();
+
+  // Init logging first (so FLAGS_* affect glog)
   google::InitGoogleLogging(argv[0]);
-  google::ParseCommandLineFlags(&argc, &argv, false);
-  google::InstallFailureSignalHandler();
+
+  // Parse only non-help flags and REMOVE recognized ones from argv
+  // so the remaining argv is clean for rclcpp.
+  gflags::ParseCommandLineNonHelpFlags(&argc, &argv, /*remove_flags=*/true);
+
+  rclcpp::init(argc, argv);
 
   auto nh = rclcpp::Node::make_shared("voxblox");
 
