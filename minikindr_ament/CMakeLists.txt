@@ -6,7 +6,11 @@ ament_auto_find_build_dependencies()
 find_package(Threads REQUIRED)  # only if your headers actually require it
 
 # Header-only library
-
+find_package(Eigen3 REQUIRED)
+include_directories(
+  include
+  ${EIGEN3_INCLUDE_DIRS}
+)
 
 ament_auto_add_library(${PROJECT_NAME} INTERFACE)
 
