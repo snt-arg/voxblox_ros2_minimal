@@ -9,6 +9,7 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 find_package(Protobuf REQUIRED) # provides protobuf_generate_cpp + protobuf::libprotobuf
+
 find_package(Eigen3 REQUIRED)
 include_directories(
  include

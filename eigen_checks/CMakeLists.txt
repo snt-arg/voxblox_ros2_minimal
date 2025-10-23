@@ -27,7 +27,6 @@ project(eigen_checks)
 
 find_package(ament_cmake_auto REQUIRED)
 
-
 ament_auto_find_build_dependencies()
 
 add_definitions(--std=c++14 -Wall -Wextra )

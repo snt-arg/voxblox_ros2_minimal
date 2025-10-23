@@ -368,6 +368,8 @@ void TsdfServer::getServerConfigFromRosParam(rclcpp::Node* node_ptr) {
   node_ptr->get_parameter("accumulate_icp_corrections",
                           accumulate_icp_corrections_);
   node_ptr->get_parameter("verbose", verbose_);
+  RCLCPP_ERROR(node_ptr_->get_logger(), "Verbose mode is %s",
+               verbose_ ? "on" : "off");
   node_ptr->get_parameter("mesh_filename", mesh_filename_);
 
   // node_ptr->get_parameter("color_mode", color_mode_);
@@ -550,30 +552,47 @@ bool TsdfServer::getNextPointcloudFromQueue(
   if (queue->empty()) {
     return false;
   }
+
   *pointcloud_msg = queue->front();
+  auto origin_frame = (*pointcloud_msg)->header.frame_id;
   if (transformer_.lookupTransform((*pointcloud_msg)->header.frame_id,
                                    world_frame_,
                                    (*pointcloud_msg)->header.stamp, T_G_C)) {
     queue->pop();
+    // RCLCPP_WARN(node_ptr_->get_logger(),
+    //             "Got transform for pointcloud at time %.3f sec.",
+    //             rclcpp::Time((*pointcloud_msg)->header.stamp,
+    //                          node_ptr_->get_clock()->get_clock_type())
+    //                 .seconds());
     return true;
   } else {
-    if (queue->size() >= kMaxQueueSize) {
-      // ROS_ERROR_THROTTLE(60,
-      //                    "Input pointcloud queue getting too long! Dropping "
-      //                    "some pointclouds. Either unable to look up
-      //                    transform " "timestamps or the processing is taking
-      //                    too long.");
-      RCLCPP_ERROR_THROTTLE(
-          node_ptr_->get_logger(), *node_ptr_->get_clock(), 60000,
-          "Input pointcloud queue getting too long! Dropping "
-          "some pointclouds. Either unable to look up transform "
-          "timestamps or the processing is taking too long.");
+    RCLCPP_WARN(node_ptr_->get_logger(),
+                "Could not get transform for pointcloud at time %.3f sec. , "
+                "from %s to %s. "
+                "Waiting for the transform to become available.",
+                rclcpp::Time((*pointcloud_msg)->header.stamp,
+                             node_ptr_->get_clock()->get_clock_type())
+                    .seconds(),
+                origin_frame.c_str(), world_frame_.c_str());
+  }
 
-      while (queue->size() >= kMaxQueueSize) {
-        queue->pop();
-      }
+  if (queue->size() >= kMaxQueueSize) {
+    // ROS_ERROR_THROTTLE(60,
+    //                    "Input pointcloud queue getting too long! Dropping "
+    //                    "some pointclouds. Either unable to look up
+    //                    transform " "timestamps or the processing is taking
+    //                    too long.");
+    RCLCPP_ERROR_THROTTLE(
+        node_ptr_->get_logger(), *node_ptr_->get_clock(), 1000,
+        "Input pointcloud queue getting too long! Dropping "
+        "some pointclouds. Either unable to look up transform "
+        "timestamps or the processing is taking too long.");
+
+    while (queue->size() >= kMaxQueueSize) {
+      queue->pop();
     }
   }
+
   return false;
 }
 
@@ -623,6 +642,15 @@ bool TsdfServer::getNextPointcloudFromQueue(
 
 void TsdfServer::insertPointcloud(
     const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg_in) {
+  // RCLCPP_INFO(node_ptr_->get_logger(),
+  //             "TSDF Server received pointcloud message with %d points at time
+  //             "
+  //             "%.3f sec.",
+  //             pointcloud_msg_in->width * pointcloud_msg_in->height,
+  //             rclcpp::Time(pointcloud_msg_in->header.stamp,
+  //                          node_ptr_->get_clock()->get_clock_type())
+  //                 .seconds());
+
   const auto clk_type = node_ptr_->get_clock()->get_clock_type();
   const rclcpp::Time t_msg(pointcloud_msg_in->header.stamp, clk_type);
 
@@ -638,14 +666,6 @@ void TsdfServer::insertPointcloud(
   } else if ((t_msg - last_msg_time_ptcloud_) > min_time_between_msgs_) {
     last_msg_time_ptcloud_ = t_msg;  // <-- use t_msg (same clock)
     pointcloud_queue_.push(pointcloud_msg_in);
-    RCLCPP_ERROR(node_ptr_->get_logger(),
-                 "TSDF Server accepted pointcloud message at time %.3f sec.",
-                 t_msg.seconds());
-  } else {
-    // RCLCPP_WARN(
-    //     node_ptr_->get_logger(),
-    //     "TSDF Server dropping pointcloud message to maintain min time between
-    //     " "messages.");
   }
 
   Transformation T_G_C;

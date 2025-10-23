@@ -64,6 +64,11 @@ Transformer::Transformer(rclcpp::Node* node_ptr)
   //                     std::placeholders::_1));
 
   if (!use_tf_transforms_) {
+    RCLCPP_WARN(
+        node_ptr_->get_logger(),
+        "Using transform topic and static transforms from parameters. This is "
+        "deprecated; please use TF transforms instead.");
+
     transform_sub_ptr_ =
         node_ptr_->create_subscription<geometry_msgs::msg::TransformStamped>(
             "transform", rclcpp::QoS(40),
@@ -140,8 +145,8 @@ bool Transformer::lookupTransformTf(const std::string& from_frame,
 
   // Previous behavior was just to use the latest transform if the time is in
   // the future. Now we will just wait.
-  if (tf_buffer_->canTransform(to_frame, from_frame_modified, time_to_lookup,
-                               rclcpp::Duration::from_seconds(0.1))) {
+  if (!tf_buffer_->canTransform(to_frame, from_frame_modified, time_to_lookup,
+                                rclcpp::Duration::from_seconds(0.1))) {
     return false;
   }
 

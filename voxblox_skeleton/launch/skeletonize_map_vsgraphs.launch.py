@@ -37,6 +37,7 @@ def generate_launch_description():
         default_value="rs_sparse_graph_0.10.voxblox",
         description="Output sparse graph filename",
     )
+
     frame_id_arg = DeclareLaunchArgument(
         "frame_id", default_value="world", description="World / map frame"
     )
@@ -83,8 +84,8 @@ def generate_launch_description():
                 # Visualization / frames
                 "verbose": True,
                 "color_mode": "color",
-                "frame_id": "world",
-                "world_frame": "world",
+                "frame_id": LaunchConfiguration("frame_id"),
+                "world_frame": LaunchConfiguration("frame_id"),
                 # Files
                 "input_filepath": voxblox_path,
                 "output_filepath": output_path,
@@ -93,8 +94,8 @@ def generate_launch_description():
                 "enable_icp": False,
                 "update_esdf": True,
                 "esdf_min_diff_m": 0.0,
-                "tsdf_voxel_size": 0.2,
-                "min_gvd_distance": 0.5,
+                "tsdf_voxel_size": 0.1,
+                "min_gvd_distance": 0.1,
                 "esdf_max_distance_m": 5.0,
                 "publish_pointclouds": True,
                 "min_separation_angle": 0.78,  # 45 deg

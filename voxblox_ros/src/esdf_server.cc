@@ -100,6 +100,10 @@ void EsdfServer::setupRos() {
   node_ptr_->get_parameter("traversability_radius", traversability_radius_);
 
   double update_esdf_every_n_sec = 1.0;
+  // nh_private_.param("update_esdf_every_n_sec", update_esdf_every_n_sec,
+  //                   update_esdf_every_n_sec);
+  // node_ptr_->declare_parameter("update_esdf_every_n_sec",
+  //                              update_esdf_every_n_sec);
   if (!node_ptr_->has_parameter("update_esdf_every_n_sec")) {
     node_ptr_->declare_parameter("update_esdf_every_n_sec",
                                  update_esdf_every_n_sec);
