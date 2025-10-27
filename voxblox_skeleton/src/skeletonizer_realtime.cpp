@@ -30,7 +30,7 @@ class SkeletonizerNode {
         rclcpp::QoS(1).transient_local());
     sparse_graph_pub_ =
         node_ptr_->create_publisher<visualization_msgs::msg::MarkerArray>(
-            std::string(node_ptr_->get_name()) + "sparse_graph",
+            std::string(node_ptr_->get_name()) + "/sparse_graph",
             rclcpp::QoS(1).transient_local());
   }
 

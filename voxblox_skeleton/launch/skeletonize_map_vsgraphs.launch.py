@@ -39,11 +39,11 @@ def generate_launch_description():
     )
 
     frame_id_arg = DeclareLaunchArgument(
-        "frame_id", default_value="world", description="World / map frame"
+        "frame_id", default_value="map", description="World / map frame"
     )
     pc_topic_arg = DeclareLaunchArgument(
         "pc_topic",
-        default_value="/vs_graphs/points_map",
+        default_value="/camera/depth/points",
         description="PointCloud2 topic to feed the skeletonizer",
     )
 
@@ -94,8 +94,8 @@ def generate_launch_description():
                 "enable_icp": False,
                 "update_esdf": True,
                 "esdf_min_diff_m": 0.0,
-                "tsdf_voxel_size": 0.1,
-                "min_gvd_distance": 0.1,
+                "tsdf_voxel_size": 0.2,
+                "min_gvd_distance": 0.5,
                 "esdf_max_distance_m": 5.0,
                 "publish_pointclouds": True,
                 "min_separation_angle": 0.78,  # 45 deg
@@ -104,8 +104,8 @@ def generate_launch_description():
                 "vertex_distance_threshold": 0.3,
                 "max_block_distance_from_body": 100.0,
                 "generate_by_layer_neighbors": False,
-                # "slice_level": 1.0,
-                # "publish_slices": True,
+                "slice_level": 1.0,
+                "publish_slices": True,
             }
         ],
     )
