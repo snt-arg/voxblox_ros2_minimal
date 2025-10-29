@@ -31,9 +31,17 @@ ament_auto_add_library(${PROJECT_NAME}
 
 find_package(glog REQUIRED)
 find_package(Protobuf REQUIRED)
+find_package(voxblox REQUIRED)
+find_package(xmlrpcpp REQUIRED)
+
+ament_target_dependencies(${PROJECT_NAME}
+  voxblox_msgs
+)
 
 target_link_libraries(${PROJECT_NAME}
   ${PCL_LIBRARIES}
+  ${voxblox_LIBRARIES}
+  ${xmlrpcpp_LIBRARIES}
   glog::glog
   protobuf::libprotobuf
 )

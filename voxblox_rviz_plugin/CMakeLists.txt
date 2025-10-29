@@ -1,64 +1,72 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(voxblox_rviz_plugin)
 
-find_package(catkin_simple REQUIRED)
-catkin_simple(ALL_DEPS_REQUIRED)
-
-set(CMAKE_MACOSX_RPATH 0)
-add_definitions(-std=c++11 -Wall)
-
-## This setting causes Qt's "MOC" generation to happen automatically.
-set(CMAKE_AUTOMOC ON)
-
-## This plugin includes Qt widgets, so we must include Qt.
-## We'll use the version that rviz used so they are compatible.
-if(rviz_QT_VERSION VERSION_LESS "5")
-  message(STATUS "Using Qt4 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
-  find_package(Qt4 ${rviz_QT_VERSION} EXACT REQUIRED QtCore QtGui)
-  ## pull in all required include dirs, define QT_LIBRARIES, etc.
-  include(${QT_USE_FILE})
-  qt4_wrap_cpp(MOC_FILES
-    ${INCLUDE_FILES_QT}
-  )
-else()
-  message(STATUS "Using Qt5 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
-  find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
-  ## make target_link_libraries(${QT_LIBRARIES}) pull in all required dependencies
-  set(QT_LIBRARIES Qt5::Widgets)
-  QT5_WRAP_CPP(MOC_FILES
-    ${INCLUDE_FILES_QT}
-  )
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
-## Avoid Qt signals and slots defining "emit", "slots", etc.
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# Find dependencies using ament_auto
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
+
+# Do find_package(rviz_ogre_vendor) first to make sure the custom OGRE is found
+find_package(rviz_ogre_vendor REQUIRED)
+
+# OGRE includes must be set before AUTOMOC for Qt MOC to find headers
+# Note: Official rviz plugins use different build system that handles this automatically
+# With ament_cmake_auto, we need explicit include_directories for AUTOMOC stage
+set(OGRE_INCLUDE_DIRS "${rviz_ogre_vendor_DIR}/../../../opt/rviz_ogre_vendor/include")
+include_directories(SYSTEM ${OGRE_INCLUDE_DIRS})
+
+# Qt5 is required for RViz2 plugins (not handled by ament_auto)
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
+set(QT_LIBRARIES Qt5::Widgets Qt5::Core)
+
+# This setting causes Qt's "MOC" generation to happen automatically
+set(CMAKE_AUTOMOC ON)
+
+# Avoid Qt signals and slots defining "emit", "slots", etc.
 add_definitions(-DQT_NO_KEYWORDS)
 
-set(HEADER_FILES include/voxblox_rviz_plugin/voxblox_mesh_display.h include/voxblox_rviz_plugin/voxblox_mesh_visual.h)
+set(HEADER_FILES
+  include/voxblox_rviz_plugin/voxblox_mesh_display.h
+  include/voxblox_rviz_plugin/voxblox_mesh_visual.h
+)
 
-set(SRC_FILES src/voxblox_mesh_display.cc src/voxblox_mesh_visual.cc )
+set(SRC_FILES
+  src/voxblox_mesh_display.cc
+  src/voxblox_mesh_visual.cc
+)
 
-cs_add_library(${PROJECT_NAME}
+# Build the plugin library using ament_auto
+ament_auto_add_library(${PROJECT_NAME} SHARED
   ${SRC_FILES}
   ${HEADER_FILES}
-  ${MOC_FILES}
 )
 
 target_link_libraries(${PROJECT_NAME}
   ${QT_LIBRARIES}
+  rviz_ogre_vendor::OgreMain
 )
 
+# Prevent pluginlib from using boost
+target_compile_definitions(${PROJECT_NAME} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-##########
-# EXPORT #
-##########
+# Install plugin description and icons
+install(FILES plugin_description.xml
+  DESTINATION share/${PROJECT_NAME}
+)
 
-install(
-  FILES plugin_description.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+install(DIRECTORY icons/
+  DESTINATION share/${PROJECT_NAME}/icons
+)
 
-install(
-  DIRECTORY icons/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/icons)
+# Export plugin
+pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)
 
-cs_install()
-cs_export()
+ament_auto_package()

@@ -72,8 +72,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
-
 find_package(glog REQUIRED)
+
+target_link_libraries(${PROJECT_NAME}
+  ${PROJECT_NAME}_proto
+  glog::glog
+  protobuf::libprotobuf
+)
 
 # ament_auto_add_executable(tsdf_to_esdf test/tsdf_to_esdf.cc)
 # target_link_libraries(tsdf_to_esdf ${PROJECT_NAME} glog::glog ${PROTOBUF_LIBRARIES})
