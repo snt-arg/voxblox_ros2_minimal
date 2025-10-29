@@ -26,7 +26,8 @@ VoxbloxMeshVisual::~VoxbloxMeshVisual() {
   }
 }
 
-void VoxbloxMeshVisual::setMessage(voxblox_msgs::msg::Mesh::ConstSharedPtr msg) {
+void VoxbloxMeshVisual::setMessage(
+    voxblox_msgs::msg::Mesh::ConstSharedPtr msg) {
   for (const voxblox_msgs::msg::MeshBlock& mesh_block : msg->mesh_blocks) {
     const voxblox::BlockIndex index(mesh_block.index[0], mesh_block.index[1],
                                     mesh_block.index[2]);

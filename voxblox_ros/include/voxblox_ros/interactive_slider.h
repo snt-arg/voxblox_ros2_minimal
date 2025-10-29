@@ -9,29 +9,29 @@
 
 #include <voxblox/core/common.h>
 
-namespace voxblox
-{
+namespace voxblox {
 
 /// InteractiveSlider class which can be used for visualizing voxel map slices.
 class InteractiveSlider {
-public:
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   InteractiveSlider(
-    const std::string & slider_name,
-    const std::function<void(const double & slice_level)> & slider_callback,
-    const Point & initial_position, const unsigned int free_plane_index,
-    const float marker_scale_meters);
+      const std::string& slider_name,
+      const std::function<void(const double& slice_level)>& slider_callback,
+      const Point& initial_position, const unsigned int free_plane_index,
+      const float marker_scale_meters);
   virtual ~InteractiveSlider() {}
 
-private:
+ private:
   const unsigned int free_plane_index_;
   interactive_markers::InteractiveMarkerServer interactive_marker_server_;
 
   /// Processes the feedback after moving the slider.
   virtual void interactiveMarkerFeedback(
-    const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback,
-    const std::function<void(const double slice_level)> & slider_callback);
+      const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr
+          feedback,
+      const std::function<void(const double slice_level)>& slider_callback);
 };
 
 }  // namespace voxblox

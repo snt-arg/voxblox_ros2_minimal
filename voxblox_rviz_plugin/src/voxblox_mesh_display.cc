@@ -30,8 +30,8 @@ void VoxbloxMeshDisplay::processMessage(
   if (!context_->getFrameManager()->getTransform(
           msg->header.frame_id, msg->header.stamp, position, orientation)) {
     RVIZ_COMMON_LOG_DEBUG_STREAM("Error transforming from frame '"
-                                   << msg->header.frame_id << "' to frame '"
-                                   << qPrintable(fixed_frame_) << "'");
+                                 << msg->header.frame_id << "' to frame '"
+                                 << qPrintable(fixed_frame_) << "'");
     return;
   }
 
@@ -49,4 +49,5 @@ void VoxbloxMeshDisplay::processMessage(
 }  // namespace voxblox_rviz_plugin
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS(voxblox_rviz_plugin::VoxbloxMeshDisplay, rviz_common::Display)
+PLUGINLIB_EXPORT_CLASS(voxblox_rviz_plugin::VoxbloxMeshDisplay,
+                       rviz_common::Display)
